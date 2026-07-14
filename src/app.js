@@ -94,6 +94,7 @@ let ledger = [
 ];
 
 let backendOnline = false;
+let backendBootError = "";
 let latestSummary = null;
 let currentCustomer = null;
 let customerOrders = [];
@@ -1183,9 +1184,16 @@ function saveCustomer(customer) {
 async function loadBackendData() {
   try {
     const payload = await api("/bootstrap");
+    backendBootError = "";
     normalizeBootstrap(payload);
-  } catch {
-    backendOnline = false;
+  } catch (error) {
+    backendBootError = error.message || "Backend data did not load";
+    try {
+      await api("/health");
+      backendOnline = true;
+    } catch {
+      backendOnline = false;
+    }
   }
 }
 
