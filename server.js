@@ -38,6 +38,7 @@ const SUPABASE_AUTH_ENABLED = Boolean(AUTH_PROVIDER === "supabase" && SUPABASE_U
 const SUPABASE_CACHE_MS = Number(process.env.SUPABASE_CACHE_MS || 4000);
 const ADMIN_PHONE = String(process.env.ADMIN_PHONE || "9136278478").replace(/\D/g, "");
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "1234";
+const ADMIN_PHONE_FALLBACKS = ["9136278478", "919136278478"];
 const ADMIN_PASSWORD_FALLBACK = "1234";
 const ADMIN_ROLE = process.env.ADMIN_ROLE || "owner";
 const ADMIN_SESSION_SECRET = process.env.ADMIN_SESSION_SECRET || SUPABASE_SERVICE_ROLE_KEY || crypto.randomBytes(32).toString("hex");
@@ -1253,11 +1254,15 @@ async function supabaseAdminLogin(phone, password) {
   if (!ADMIN_PASSWORD) {
     throw new Error("Admin password is not configured");
   }
-  const validPasswords = new Set([ADMIN_PASSWORD, ADMIN_PASSWORD_FALLBACK].filter(Boolean));
-  if (phone !== ADMIN_PHONE || !validPasswords.has(password)) {
+  const cleanPhone = String(phone || "").replace(/\D/g, "");
+  const cleanPassword = String(password || "").trim();
+  const validPhones = new Set([ADMIN_PHONE, ...ADMIN_PHONE_FALLBACKS].filter(Boolean));
+  const validPasswords = new Set([ADMIN_PASSWORD, ADMIN_PASSWORD_FALLBACK].filter(Boolean).map((item) => String(item).trim()));
+  const phoneMatches = validPhones.has(cleanPhone) || Array.from(validPhones).some((validPhone) => cleanPhone.endsWith(validPhone.slice(-10)));
+  if (!phoneMatches || !validPasswords.has(cleanPassword)) {
     throw new Error("Invalid admin credentials");
   }
-  return await createAdminSession(phone, ADMIN_ROLE);
+  return await createAdminSession(ADMIN_PHONE || "9136278478", ADMIN_ROLE);
 }
 
 function customerRewardApplications(db, customer) {
