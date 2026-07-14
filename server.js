@@ -32,8 +32,9 @@ const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || "";
 const DATA_DRIVER = process.env.DATA_DRIVER || "auto";
+const AUTH_PROVIDER = process.env.AUTH_PROVIDER || "local";
 const SUPABASE_ENABLED = Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY && DATA_DRIVER !== "local");
-const SUPABASE_AUTH_ENABLED = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY && DATA_DRIVER !== "local");
+const SUPABASE_AUTH_ENABLED = Boolean(AUTH_PROVIDER === "supabase" && SUPABASE_URL && SUPABASE_ANON_KEY && DATA_DRIVER !== "local");
 const SUPABASE_CACHE_MS = Number(process.env.SUPABASE_CACHE_MS || 4000);
 const ADMIN_PHONE = String(process.env.ADMIN_PHONE || "9136278478").replace(/\D/g, "");
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || (process.env.VERCEL ? "" : "1234");
@@ -51,7 +52,7 @@ const supabaseAdmin = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
   ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
   : null;
 
-const supabaseAuth = SUPABASE_URL && SUPABASE_ANON_KEY
+const supabaseAuth = SUPABASE_AUTH_ENABLED
   ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   : null;
 
@@ -1151,11 +1152,16 @@ async function supabaseCustomerSignup(phone, password, name) {
     // Fallback to local auth
     const db = await readDb();
     const existing = db.customers.find((c) => c.phone === phone);
-    if (existing) {
-      throw new Error("Customer already exists");
-    }
     const salt = crypto.randomBytes(16).toString('hex');
     const hash = crypto.pbkdf2Sync(password, salt, 100000, 64, 'sha256').toString('hex');
+    if (existing) {
+      existing.name = name || existing.name || "Customer";
+      existing.passwordSalt = salt;
+      existing.passwordHash = hash;
+      existing.updatedAt = nowIso();
+      await writeDb(db);
+      return { customer: publicCustomer(existing), session: null };
+    }
     const customer = {
       id: `cust-${crypto.randomUUID().slice(0, 8)}`,
       name,

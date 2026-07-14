@@ -9,6 +9,7 @@ Deploy this project on Vercel and connect it to the existing Supabase project.
 Set these in Vercel Project Settings > Environment Variables:
 
 - `DATA_DRIVER` = `auto`
+- `AUTH_PROVIDER` = `local`
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `SUPABASE_CACHE_MS` = `4000`
@@ -23,6 +24,8 @@ Optional:
 
 - `SUPABASE_ANON_KEY`
 - `UPI_VPA`
+
+Keep `AUTH_PROVIDER=local` for this launch. Customer accounts will use simple phone + password login through the website database. Only change it to `supabase` later if Supabase phone auth/OTP is fully enabled in the Supabase dashboard.
 
 If `UPI_VPA` is not set, the site still shows the saved QR/payment panel flow, but UPI intent links may be limited.
 

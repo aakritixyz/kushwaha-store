@@ -25,6 +25,7 @@ Create `.env` locally using `.env.example`:
 
 ```bash
 DATA_DRIVER=auto
+AUTH_PROVIDER=local
 SUPABASE_URL=https://your-project-ref.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 SUPABASE_CACHE_MS=4000
@@ -44,7 +45,7 @@ Supabase may show either an older JWT-style service role key or a newer secret k
 
 `SUPABASE_CACHE_MS` keeps a short server-side snapshot to avoid refetching every table on repeated page/admin requests. `4000` is a good prototype value; lower it if you need faster cross-device freshness.
 
-Admin credentials are separate from customer login. Payments currently support pay-at-pickup and UPI intent/QR flow.
+Admin credentials are separate from customer login. Keep `AUTH_PROVIDER=local` unless you intentionally enable Supabase phone auth/OTP. Payments currently support pay-at-pickup and UPI intent/QR flow.
 
 ## 4. Seed Data
 
