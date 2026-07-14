@@ -2462,9 +2462,6 @@ async function loginAdmin(event) {
     });
     saveAdminSession(payload);
     await loadAdminOrders();
-    await loadAdminRewardApplications();
-    await loadAdminUdhaarRequests();
-    await loadLedgerAccounts();
     renderAdminCatalogManager();
   } catch (error) {
     alert(error.message);
@@ -3288,13 +3285,8 @@ async function boot() {
       udhaarRequest = null;
     });
   }
-  if (backendOnline) {
+  if (backendOnline && adminSession?.token) {
     await loadAdminOrders();
-    if (adminSession?.token) {
-      await loadAdminRewardApplications().catch(() => saveAdminSession(null));
-      await loadAdminUdhaarRequests().catch(() => saveAdminSession(null));
-      await loadLedgerAccounts().catch(() => saveAdminSession(null));
-    }
   }
   applyLanguage();
   renderAdminGate();

@@ -33,6 +33,7 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || "";
 const DATA_DRIVER = process.env.DATA_DRIVER || "auto";
 const AUTH_PROVIDER = process.env.AUTH_PROVIDER || "local";
+const LOAD_OPTIONAL_DATA = process.env.LOAD_OPTIONAL_DATA === "true";
 const SUPABASE_ENABLED = Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY && DATA_DRIVER !== "local");
 const SUPABASE_AUTH_ENABLED = Boolean(AUTH_PROVIDER === "supabase" && SUPABASE_URL && SUPABASE_ANON_KEY && DATA_DRIVER !== "local");
 const SUPABASE_CACHE_MS = Number(process.env.SUPABASE_CACHE_MS || 30000);
@@ -241,12 +242,12 @@ async function loadSupabaseDb() {
     selectAll("orders", "created_at.desc"),
     selectAll("order_items", "id.asc"),
     selectAll("receipts", "created_at.desc"),
-    selectAll("payments", "created_at.desc"),
+    LOAD_OPTIONAL_DATA ? selectAll("payments", "created_at.desc") : Promise.resolve([]),
     selectAll("ledger_accounts", "name.asc"),
     selectAll("ledger_entries", "created_at.desc"),
-    selectAll("rewards_draws", "month.desc"),
-    selectAll("blog_posts", "created_at.desc"),
-    selectOptional("reviews", "created_at.desc")
+    LOAD_OPTIONAL_DATA ? selectAll("rewards_draws", "month.desc") : Promise.resolve([]),
+    LOAD_OPTIONAL_DATA ? selectAll("blog_posts", "created_at.desc") : Promise.resolve(seed.blogPosts || []),
+    LOAD_OPTIONAL_DATA ? selectOptional("reviews", "created_at.desc") : Promise.resolve(seed.reviews || [])
   ]);
 
   if (!settingsRows.length && !categoryRows.length && !productRows.length && !customerRows.length && !orderRows.length) {
@@ -364,7 +365,7 @@ async function loadSupabaseDb() {
       clubName: mainSettings.rewards?.clubName || seed.rewards?.clubName || "Community Rewards Club",
       positioning: mainSettings.rewards?.positioning || seed.rewards?.positioning || "",
       applications: mainSettings.rewards?.applications || seed.rewards?.applications || [],
-      draws: rewardRows.map((row) => ({
+      draws: rewardRows.map((row) => row.createdAt !== undefined ? row : ({
         id: row.id,
         month: row.month,
         status: row.status,
@@ -373,7 +374,7 @@ async function loadSupabaseDb() {
         createdAt: row.created_at
       }))
     },
-    blogPosts: blogRows.map((row) => ({
+    blogPosts: blogRows.map((row) => row.createdAt !== undefined ? row : ({
       id: row.id,
       title: row.title,
       slug: row.slug,
@@ -382,7 +383,7 @@ async function loadSupabaseDb() {
       published: Boolean(row.published),
       createdAt: row.created_at
     })),
-    reviews: reviewRows.length ? reviewRows.map((row) => ({
+    reviews: reviewRows.length ? reviewRows.map((row) => row.createdAt !== undefined ? row : ({
       id: row.id,
       customerId: row.customer_id || undefined,
       name: row.name,
