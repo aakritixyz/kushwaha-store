@@ -374,7 +374,7 @@ const translations = {
     chooseCategory: "Choose a category above to see matching samaan, or tap All Products if you want the full list.",
     emptyCart: "Your tokri is empty. Add rozmarra samaan from the shelf.",
     each: "each",
-    websiteNeedsBackend: "Start the backend with `npm start` to place website orders. WhatsApp order still works.",
+    websiteNeedsBackend: "Website backend is not reachable yet. Please refresh after deployment finishes.",
     customerNamePrompt: "Customer name for pickup order",
     customerPhonePrompt: "Customer phone number",
     loginBeforeOrder: "Please login or create an account so this order is saved under your name.",
@@ -646,7 +646,7 @@ const translations = {
     chooseCategory: "सामान देखने के लिए ऊपर से category चुनें, या पूरी list के लिए All Products दबाएं.",
     emptyCart: "आपकी टोकरी खाली है. रोज़मर्रा सामान शेल्फ से जोड़ें.",
     each: "प्रति item",
-    websiteNeedsBackend: "वेबसाइट order के लिए backend `npm start` से चालू करें. व्हाट्सऐप order अभी भी चलेगा.",
+    websiteNeedsBackend: "Website backend अभी reachable नहीं है. Deployment finish होने के बाद refresh करें.",
     customerNamePrompt: "पिकअप order के लिए ग्राहक नाम",
     customerPhonePrompt: "ग्राहक फोन नंबर",
     loginBeforeOrder: "Order आपके नाम से save करने के लिए login या खाता बनाएं.",
@@ -1194,6 +1194,18 @@ async function loadBackendData() {
     } catch {
       backendOnline = false;
     }
+  }
+}
+
+async function ensureBackendOnline() {
+  if (backendOnline) return true;
+  try {
+    await api("/health");
+    backendOnline = true;
+    return true;
+  } catch {
+    alert(backendBootError || t("websiteNeedsBackend"));
+    return false;
   }
 }
 
@@ -1978,10 +1990,7 @@ async function applyReward(type) {
     renderAccount();
     return;
   }
-  if (!backendOnline) {
-    alert(t("websiteNeedsBackend"));
-    return;
-  }
+  if (!(await ensureBackendOnline())) return;
   try {
     const payload = await api(`/customers/${encodeURIComponent(currentCustomer.id)}/rewards/apply`, {
       method: "POST",
@@ -2026,10 +2035,7 @@ async function requestUdhaarAccount() {
     renderAccount();
     return;
   }
-  if (!backendOnline) {
-    alert(t("websiteNeedsBackend"));
-    return;
-  }
+  if (!(await ensureBackendOnline())) return;
   try {
     const payload = await api(`/customers/${encodeURIComponent(currentCustomer.id)}/udhaar-request`, { method: "POST" });
     udhaarRequest = payload.application || null;
@@ -2419,10 +2425,7 @@ async function loadAdminOrders() {
 
 async function loginAdmin(event) {
   event.preventDefault();
-  if (!backendOnline) {
-    alert(t("websiteNeedsBackend"));
-    return;
-  }
+  if (!(await ensureBackendOnline())) return;
   try {
     const payload = await api("/admin/login", {
       method: "POST",
@@ -2672,10 +2675,7 @@ function addLooseToCart(id) {
 
 async function placeWebsiteOrder() {
   if (!state.cart.size) return;
-  if (!backendOnline) {
-    alert(t("websiteNeedsBackend"));
-    return;
-  }
+  if (!(await ensureBackendOnline())) return;
   if (!currentCustomer) {
     alert(t("loginBeforeOrder"));
     $("#accountDrawer").classList.add("open");
@@ -2801,10 +2801,7 @@ function printReceipt(orderId) {
 
 async function loginCustomer(event) {
   event.preventDefault();
-  if (!backendOnline) {
-    alert(t("websiteNeedsBackend"));
-    return;
-  }
+  if (!(await ensureBackendOnline())) return;
   try {
     const payload = await api("/auth/login", {
       method: "POST",
@@ -2825,10 +2822,7 @@ async function loginCustomer(event) {
 }
 
 async function signupCustomer() {
-  if (!backendOnline) {
-    alert(t("websiteNeedsBackend"));
-    return;
-  }
+  if (!(await ensureBackendOnline())) return;
   try {
     const payload = await api("/auth/signup", {
       method: "POST",
