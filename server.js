@@ -139,6 +139,9 @@ async function supabaseRequest(table, { method = "GET", query = "", body, prefer
   });
   if (!response.ok) {
     const text = await response.text();
+    if (text.includes("PGRST303") || text.includes("JWT issued at future")) {
+      throw new Error(`Supabase ${table} ${method} failed: Supabase rejected SUPABASE_SERVICE_ROLE_KEY because the JWT/API key timestamp is invalid. In Vercel, replace SUPABASE_SERVICE_ROLE_KEY with the current Secret key from Supabase Settings > API Keys > Secret keys > default, then redeploy.`);
+    }
     throw new Error(`Supabase ${table} ${method} failed: ${response.status} ${text}`);
   }
   if (response.status === 204) return null;
