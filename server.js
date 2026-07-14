@@ -35,7 +35,7 @@ const DATA_DRIVER = process.env.DATA_DRIVER || "auto";
 const AUTH_PROVIDER = process.env.AUTH_PROVIDER || "local";
 const SUPABASE_ENABLED = Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY && DATA_DRIVER !== "local");
 const SUPABASE_AUTH_ENABLED = Boolean(AUTH_PROVIDER === "supabase" && SUPABASE_URL && SUPABASE_ANON_KEY && DATA_DRIVER !== "local");
-const SUPABASE_CACHE_MS = Number(process.env.SUPABASE_CACHE_MS || 4000);
+const SUPABASE_CACHE_MS = Number(process.env.SUPABASE_CACHE_MS || 30000);
 const ADMIN_PHONE = String(process.env.ADMIN_PHONE || "9136278478").replace(/\D/g, "");
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "1234";
 const ADMIN_PHONE_FALLBACKS = ["9136278478", "919136278478"];
@@ -187,6 +187,16 @@ async function upsertProductRows(rows) {
     const fallbackRows = rows.map(({ mrp: _mrp, ...row }) => row);
     await upsertRows("products", fallbackRows);
   }
+}
+
+function compactJson(value) {
+  return JSON.stringify(value ?? null);
+}
+
+function changedRows(currentRows, previousRows, rowId = (row) => row.id) {
+  if (!previousRows) return currentRows;
+  const previous = new Map(previousRows.map((row) => [rowId(row), compactJson(row)]));
+  return currentRows.filter((row) => previous.get(rowId(row)) !== compactJson(row));
 }
 
 async function readSupabaseDb() {
@@ -448,93 +458,154 @@ async function loadSupabaseDb() {
 
 async function writeSupabaseDb(db) {
   const writeTime = nowIso();
-  await supabaseRequest("store_settings", {
-    method: "POST",
-    query: "?on_conflict=id",
-    body: [{
-      id: "main",
-      store: db.store,
-      settings: db.settings,
-      rewards: {
-        clubName: db.rewards?.clubName,
-        positioning: db.rewards?.positioning,
-        applications: db.rewards?.applications || []
-      },
-      updated_at: writeTime
-    }],
-    prefer: "resolution=merge-duplicates,return=minimal"
-  });
+  const previousDb = supabaseDbCache;
 
-  await upsertRows("categories", db.categories.map((category) => ({
+  const settingsRow = {
+    id: "main",
+    store: db.store,
+    settings: db.settings,
+    rewards: {
+      clubName: db.rewards?.clubName,
+      positioning: db.rewards?.positioning,
+      applications: db.rewards?.applications || []
+    }
+  };
+  const previousSettingsRow = previousDb ? {
+    id: "main",
+    store: previousDb.store,
+    settings: previousDb.settings,
+    rewards: {
+      clubName: previousDb.rewards?.clubName,
+      positioning: previousDb.rewards?.positioning,
+      applications: previousDb.rewards?.applications || []
+    }
+  } : null;
+
+  const categoryRows = (db.categories || []).map((category) => ({
     id: category.id,
     name: category.name,
     sort_order: Number(category.sort || 0)
-  })));
-  await upsertRows("customers", db.customers.map((customer) => ({
+  }));
+  const previousCategoryRows = previousDb?.categories?.map((category) => ({
+    id: category.id,
+    name: category.name,
+    sort_order: Number(category.sort || 0)
+  }));
+  const customerRows = (db.customers || []).map((customer) => ({
     id: customer.id,
     name: customer.name,
     phone: customer.phone,
     loyalty_points: Number(customer.loyaltyPoints || 0),
     monthly_spend: Number(customer.monthlySpend || 0),
     password_salt: customer.passwordSalt || null,
-    password_hash: customer.passwordHash || null,
-    updated_at: writeTime
-  })));
-
-  await Promise.all([
-    upsertProductRows(db.products.map((product) => ({
-      id: product.id,
-      name: product.name,
-      category_id: product.categoryId,
-      unit: product.unit,
-      price: Number(product.price || 0),
-      mrp: Number(product.mrp || 0),
-      stock: Number(product.stock || 0),
-      low_stock_at: Number(product.lowStockAt || 0),
-      mark: product.mark || null,
-      loose: Boolean(product.loose),
-      image_url: product.imageUrl || null,
-      source_note: product.sourceNote || null,
-      updated_at: writeTime
-    }))),
-    upsertRows("ledger_accounts", (db.ledger || []).map((account) => ({
-      id: account.id,
-      customer_id: account.customerId || null,
-      phone: account.phone || "",
-      name: account.name,
-      balance: Number(account.balance || 0),
-      updated_at: writeTime
-    }))),
-    upsertRows("rewards_draws", (db.rewards?.draws || []).map((draw) => ({
-      id: draw.id,
-      month: draw.month,
-      status: draw.status,
-      winner_customer_id: draw.winnerCustomerId || null,
-      reward: draw.reward,
-      created_at: draw.createdAt || writeTime
-    }))),
-    upsertRows("blog_posts", (db.blogPosts || []).map((post) => ({
-      id: post.id,
-      title: post.title,
-      slug: post.slug,
-      excerpt: post.excerpt || "",
-      body: post.body || "",
-      published: Boolean(post.published),
-      created_at: post.createdAt || writeTime
-    }))),
-    upsertOptionalRows("reviews", (db.reviews || []).map((review) => ({
-      id: review.id,
-      customer_id: review.customerId || null,
-      name: review.name,
-      phone: review.phone || "",
-      rating: Number(review.rating || 5),
-      text: review.text || "",
-      published: review.published !== false,
-      created_at: review.createdAt || writeTime
-    })))
-  ]);
-
-  await upsertRows("orders", db.orders.map((order) => ({
+    password_hash: customer.passwordHash || null
+  }));
+  const previousCustomerRows = previousDb?.customers?.map((customer) => ({
+    id: customer.id,
+    name: customer.name,
+    phone: customer.phone,
+    loyalty_points: Number(customer.loyaltyPoints || 0),
+    monthly_spend: Number(customer.monthlySpend || 0),
+    password_salt: customer.passwordSalt || null,
+    password_hash: customer.passwordHash || null
+  }));
+  const productRows = (db.products || []).map((product) => ({
+    id: product.id,
+    name: product.name,
+    category_id: product.categoryId,
+    unit: product.unit,
+    price: Number(product.price || 0),
+    mrp: Number(product.mrp || 0),
+    stock: Number(product.stock || 0),
+    low_stock_at: Number(product.lowStockAt || 0),
+    mark: product.mark || null,
+    loose: Boolean(product.loose),
+    image_url: product.imageUrl || null,
+    source_note: product.sourceNote || null
+  }));
+  const previousProductRows = previousDb?.products?.map((product) => ({
+    id: product.id,
+    name: product.name,
+    category_id: product.categoryId,
+    unit: product.unit,
+    price: Number(product.price || 0),
+    mrp: Number(product.mrp || 0),
+    stock: Number(product.stock || 0),
+    low_stock_at: Number(product.lowStockAt || 0),
+    mark: product.mark || null,
+    loose: Boolean(product.loose),
+    image_url: product.imageUrl || null,
+    source_note: product.sourceNote || null
+  }));
+  const ledgerAccountRows = (db.ledger || []).map((account) => ({
+    id: account.id,
+    customer_id: account.customerId || null,
+    phone: account.phone || "",
+    name: account.name,
+    balance: Number(account.balance || 0)
+  }));
+  const previousLedgerAccountRows = previousDb?.ledger?.map((account) => ({
+    id: account.id,
+    customer_id: account.customerId || null,
+    phone: account.phone || "",
+    name: account.name,
+    balance: Number(account.balance || 0)
+  }));
+  const rewardRows = (db.rewards?.draws || []).map((draw) => ({
+    id: draw.id,
+    month: draw.month,
+    status: draw.status,
+    winner_customer_id: draw.winnerCustomerId || null,
+    reward: draw.reward,
+    created_at: draw.createdAt || writeTime
+  }));
+  const previousRewardRows = previousDb?.rewards?.draws?.map((draw) => ({
+    id: draw.id,
+    month: draw.month,
+    status: draw.status,
+    winner_customer_id: draw.winnerCustomerId || null,
+    reward: draw.reward,
+    created_at: draw.createdAt || writeTime
+  }));
+  const blogRows = (db.blogPosts || []).map((post) => ({
+    id: post.id,
+    title: post.title,
+    slug: post.slug,
+    excerpt: post.excerpt || "",
+    body: post.body || "",
+    published: Boolean(post.published),
+    created_at: post.createdAt || writeTime
+  }));
+  const previousBlogRows = previousDb?.blogPosts?.map((post) => ({
+    id: post.id,
+    title: post.title,
+    slug: post.slug,
+    excerpt: post.excerpt || "",
+    body: post.body || "",
+    published: Boolean(post.published),
+    created_at: post.createdAt || writeTime
+  }));
+  const reviewRows = (db.reviews || []).map((review) => ({
+    id: review.id,
+    customer_id: review.customerId || null,
+    name: review.name,
+    phone: review.phone || "",
+    rating: Number(review.rating || 5),
+    text: review.text || "",
+    published: review.published !== false,
+    created_at: review.createdAt || writeTime
+  }));
+  const previousReviewRows = previousDb?.reviews?.map((review) => ({
+    id: review.id,
+    customer_id: review.customerId || null,
+    name: review.name,
+    phone: review.phone || "",
+    rating: Number(review.rating || 5),
+    text: review.text || "",
+    published: review.published !== false,
+    created_at: review.createdAt || writeTime
+  }));
+  const orderRows = (db.orders || []).map((order) => ({
     id: order.id,
     customer_id: order.customerId,
     name: order.name,
@@ -552,54 +623,139 @@ async function writeSupabaseDb(db) {
     timeline: order.timeline || [],
     created_at: order.createdAt || writeTime,
     updated_at: order.updatedAt || writeTime
-  })));
-
-  await Promise.all([
-    upsertRows("order_items", db.orders.flatMap((order) => (order.items || []).map((item, index) => ({
+  }));
+  const previousOrderRows = previousDb?.orders?.map((order) => ({
+    id: order.id,
+    customer_id: order.customerId,
+    name: order.name,
+    phone: order.phone,
+    subtotal: Number(order.subtotal || 0),
+    discount: Number(order.discount || 0),
+    payable: Number(order.payable || order.total || 0),
+    total: Number(order.total || order.payable || order.subtotal || 0),
+    loyalty_earned: Number(order.loyaltyEarned || 0),
+    payment_mode: order.paymentMode || "pay_at_store",
+    payment_status: order.paymentStatus || "due_on_pickup",
+    fulfillment: order.fulfillment || "pickup",
+    status: order.status || "Placed",
+    receipt_id: order.receiptId || null,
+    timeline: order.timeline || [],
+    created_at: order.createdAt || writeTime,
+    updated_at: order.updatedAt || writeTime
+  }));
+  const orderItemRows = (db.orders || []).flatMap((order) => (order.items || []).map((item, index) => ({
       id: item.id || `${order.id}-${index + 1}`,
       order_id: order.id,
       product_id: item.productId,
       qty: Number(item.qty || 0),
       price: Number(item.price || 0)
-    })))),
-    upsertRows("receipts", (db.receipts || []).map((receipt) => ({
-      id: receipt.id,
-      order_id: receipt.orderId,
-      customer_id: receipt.customerId,
-      name: receipt.name,
-      phone: receipt.phone,
-      subtotal: Number(receipt.subtotal || 0),
-      discount: Number(receipt.discount || 0),
-      total: Number(receipt.total || 0),
-      payment_mode: receipt.paymentMode || "pay_at_store",
-      payment_status: receipt.paymentStatus || "due_on_pickup",
-      gst_enabled: Boolean(receipt.gstEnabled),
-      share_text: receipt.shareText || null,
-      created_at: receipt.createdAt || writeTime
-    }))),
-    upsertRows("payments", (db.payments || []).map((payment) => ({
-      id: payment.id,
-      order_id: payment.orderId,
-      customer_id: payment.customerId,
-      method: payment.method,
-      status: payment.status,
-      amount: Number(payment.amount || 0),
-      reference: payment.reference || null,
-      note: payment.note || null,
-      created_at: payment.createdAt || writeTime
-    }))),
-    upsertRows("ledger_entries", (db.ledger || []).flatMap((account) => (account.entries || []).map((entry) => ({
-      id: entry.id,
-      ledger_account_id: account.id,
-      customer_id: account.customerId || null,
-      type: entry.type,
-      amount: Number(entry.amount || 0),
-      note: entry.note || null,
-      order_id: entry.orderId || null,
-      month: entry.month || monthKey(entry.createdAt),
-      created_at: entry.createdAt || writeTime
-    }))))
-  ]);
+    })));
+  const previousOrderItemRows = previousDb?.orders?.flatMap((order) => (order.items || []).map((item, index) => ({
+    id: item.id || `${order.id}-${index + 1}`,
+    order_id: order.id,
+    product_id: item.productId,
+    qty: Number(item.qty || 0),
+    price: Number(item.price || 0)
+  })));
+  const receiptRows = (db.receipts || []).map((receipt) => ({
+    id: receipt.id,
+    order_id: receipt.orderId,
+    customer_id: receipt.customerId,
+    name: receipt.name,
+    phone: receipt.phone,
+    subtotal: Number(receipt.subtotal || 0),
+    discount: Number(receipt.discount || 0),
+    total: Number(receipt.total || 0),
+    payment_mode: receipt.paymentMode || "pay_at_store",
+    payment_status: receipt.paymentStatus || "due_on_pickup",
+    gst_enabled: Boolean(receipt.gstEnabled),
+    share_text: receipt.shareText || null,
+    created_at: receipt.createdAt || writeTime
+  }));
+  const previousReceiptRows = previousDb?.receipts?.map((receipt) => ({
+    id: receipt.id,
+    order_id: receipt.orderId,
+    customer_id: receipt.customerId,
+    name: receipt.name,
+    phone: receipt.phone,
+    subtotal: Number(receipt.subtotal || 0),
+    discount: Number(receipt.discount || 0),
+    total: Number(receipt.total || 0),
+    payment_mode: receipt.paymentMode || "pay_at_store",
+    payment_status: receipt.paymentStatus || "due_on_pickup",
+    gst_enabled: Boolean(receipt.gstEnabled),
+    share_text: receipt.shareText || null,
+    created_at: receipt.createdAt || writeTime
+  }));
+  const paymentRows = (db.payments || []).map((payment) => ({
+    id: payment.id,
+    order_id: payment.orderId,
+    customer_id: payment.customerId,
+    method: payment.method,
+    status: payment.status,
+    amount: Number(payment.amount || 0),
+    reference: payment.reference || null,
+    note: payment.note || null,
+    created_at: payment.createdAt || writeTime
+  }));
+  const previousPaymentRows = previousDb?.payments?.map((payment) => ({
+    id: payment.id,
+    order_id: payment.orderId,
+    customer_id: payment.customerId,
+    method: payment.method,
+    status: payment.status,
+    amount: Number(payment.amount || 0),
+    reference: payment.reference || null,
+    note: payment.note || null,
+    created_at: payment.createdAt || writeTime
+  }));
+  const ledgerEntryRows = (db.ledger || []).flatMap((account) => (account.entries || []).map((entry) => ({
+    id: entry.id,
+    ledger_account_id: account.id,
+    customer_id: account.customerId || null,
+    type: entry.type,
+    amount: Number(entry.amount || 0),
+    note: entry.note || null,
+    order_id: entry.orderId || null,
+    month: entry.month || monthKey(entry.createdAt),
+    created_at: entry.createdAt || writeTime
+  })));
+  const previousLedgerEntryRows = previousDb?.ledger?.flatMap((account) => (account.entries || []).map((entry) => ({
+    id: entry.id,
+    ledger_account_id: account.id,
+    customer_id: account.customerId || null,
+    type: entry.type,
+    amount: Number(entry.amount || 0),
+    note: entry.note || null,
+    order_id: entry.orderId || null,
+    month: entry.month || monthKey(entry.createdAt),
+    created_at: entry.createdAt || writeTime
+  })));
+
+  const writes = [];
+  if (!previousSettingsRow || compactJson(settingsRow) !== compactJson(previousSettingsRow)) {
+    writes.push(supabaseRequest("store_settings", {
+      method: "POST",
+      query: "?on_conflict=id",
+      body: [{ ...settingsRow, updated_at: writeTime }],
+      prefer: "resolution=merge-duplicates,return=minimal"
+    }));
+  }
+  writes.push(
+    upsertRows("categories", changedRows(categoryRows, previousCategoryRows)),
+    upsertRows("customers", changedRows(customerRows, previousCustomerRows).map((row) => ({ ...row, updated_at: writeTime }))),
+    upsertProductRows(changedRows(productRows, previousProductRows).map((row) => ({ ...row, updated_at: writeTime }))),
+    upsertRows("ledger_accounts", changedRows(ledgerAccountRows, previousLedgerAccountRows).map((row) => ({ ...row, updated_at: writeTime }))),
+    upsertRows("rewards_draws", changedRows(rewardRows, previousRewardRows)),
+    upsertRows("blog_posts", changedRows(blogRows, previousBlogRows)),
+    upsertOptionalRows("reviews", changedRows(reviewRows, previousReviewRows)),
+    upsertRows("orders", changedRows(orderRows, previousOrderRows)),
+    upsertRows("order_items", changedRows(orderItemRows, previousOrderItemRows)),
+    upsertRows("receipts", changedRows(receiptRows, previousReceiptRows)),
+    upsertRows("payments", changedRows(paymentRows, previousPaymentRows)),
+    upsertRows("ledger_entries", changedRows(ledgerEntryRows, previousLedgerEntryRows))
+  );
+  await Promise.all(writes);
 
   supabaseDbCache = structuredClone(db);
   supabaseDbCacheAt = Date.now();
