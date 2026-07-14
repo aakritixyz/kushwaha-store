@@ -1029,6 +1029,11 @@ function productImageUrl(product) {
 
 // Cache for product images to improve performance
 const imageCache = new Map();
+const brokenProductImages = new Set();
+
+function isPlaceholderImage(url) {
+  return /placehold\.co/i.test(String(url || ""));
+}
 
 function getCachedImageUrl(product) {
   if (imageCache.has(product.id)) {
@@ -1037,6 +1042,12 @@ function getCachedImageUrl(product) {
   const url = productImageUrl(product);
   imageCache.set(product.id, url);
   return url;
+}
+
+function catalogImageUrl(product) {
+  if (brokenProductImages.has(product.id)) return "";
+  const url = getCachedImageUrl(product);
+  return isPlaceholderImage(url) ? "" : url;
 }
 
 function unitMeta(product) {
@@ -1620,10 +1631,11 @@ function renderProducts() {
     visibleProducts = filteredProducts();
     state.categoryFilter = previousFilter;
   }
-  const visible = productEntries(visibleProducts);
+  const visible = productEntries(visibleProducts.filter((product) => catalogImageUrl(product)));
   $("#productGrid").innerHTML = visible.map((entry) => {
     const isVariant = entry.type === "variant";
     const product = entry.product;
+    const imageUrl = catalogImageUrl(product);
     const badge = stockText(product);
     const canOrder = Number(product.price || 0) > 0 && product.stock > 0;
     const subgroup = productSubgroup(product);
@@ -1631,7 +1643,7 @@ function renderProducts() {
     return `
       <article class="product-card">
         <div class="product-art">
-          <img src="${productImageUrl(product)}" alt="${product.name}" loading="lazy" />
+          <img src="${imageUrl}" alt="${product.name}" loading="lazy" data-product-img="${product.id}" />
         </div>
         <h3>${isVariant ? entry.brand : product.name}</h3>
         ${subgroup ? `<span class="subgroup-chip">${subgroup}</span>` : ""}
@@ -3154,6 +3166,13 @@ document.addEventListener("click", (event) => {
     printReceipt(receiptButton.dataset.receipt);
   }
 });
+
+document.addEventListener("error", (event) => {
+  const image = event.target?.closest?.("[data-product-img]");
+  if (!image) return;
+  brokenProductImages.add(image.dataset.productImg);
+  image.closest(".product-card")?.remove();
+}, true);
 
 document.addEventListener("change", (event) => {
   const variantSelect = event.target.closest("[data-variant-select]");
