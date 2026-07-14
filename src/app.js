@@ -1109,9 +1109,18 @@ async function api(path, options = {}, meta = {}) {
     headers,
     ...options
   });
-  const payload = await response.json();
+  const raw = await response.text();
+  let payload = null;
+  try {
+    payload = raw ? JSON.parse(raw) : {};
+  } catch {
+    payload = { error: raw || `Unexpected non-JSON response from ${path}` };
+  }
   if (!response.ok) {
     throw new Error(payload.error || "Backend request failed");
+  }
+  if (payload?.error && !raw.trim().startsWith("{") && !raw.trim().startsWith("[")) {
+    throw new Error(payload.error);
   }
   return payload;
 }
