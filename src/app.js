@@ -152,6 +152,10 @@ const rupee = new Intl.NumberFormat("en-IN", {
 });
 
 const $ = (selector) => document.querySelector(selector);
+const resetForm = (target) => {
+  const form = typeof target === "string" ? $(target) : target;
+  if (form && typeof form.reset === "function") form.reset();
+};
 
 function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>"']/g, (char) => ({
@@ -2350,8 +2354,9 @@ async function addAdminProduct(event) {
     }, { admin: true });
     products = [product, ...products.filter((item) => item.id !== product.id)];
     imageCache.delete(product.id);
-    event.currentTarget.reset();
-    $("#addProductStock").value = 10;
+    resetForm(event.currentTarget);
+    const stockInput = $("#addProductStock");
+    if (stockInput) stockInput.value = 10;
     renderCategories();
     renderProducts();
     renderAdminCatalogManager(product.id);
@@ -3013,7 +3018,7 @@ async function submitReview(event) {
     };
     reviews.unshift(review);
     renderReviews();
-    $("#reviewForm").reset();
+    resetForm("#reviewForm");
     alert(t("reviewSuccess"));
     return;
   }
@@ -3024,7 +3029,7 @@ async function submitReview(event) {
     });
     reviews = [payload.review, ...reviews.filter((review) => review.id !== payload.review.id)];
     renderReviews();
-    $("#reviewForm").reset();
+    resetForm("#reviewForm");
     alert(t("reviewSuccess"));
   } catch (error) {
     alert(error.message);
