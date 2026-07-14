@@ -1,4 +1,4 @@
-const API_BASE = `${window.location.origin}/api`;
+const API_BASE = `${window.location.origin}/api/index`;
 const storePhone = "919136278478";
 const MIN_ORDER_VALUE = 29;
 
@@ -1105,7 +1105,7 @@ async function api(path, options = {}, meta = {}) {
   if (meta.admin && adminSession?.token) {
     headers.Authorization = `Bearer ${adminSession.token}`;
   }
-  const response = await fetch(`${API_BASE}${path}`, {
+  const response = await fetch(`${API_BASE}?path=${encodeURIComponent(path)}`, {
     headers,
     ...options
   });
