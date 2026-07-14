@@ -1,8 +1,8 @@
-import { createServer } from "node:http";
 import { readFile, writeFile, mkdir, stat } from "node:fs/promises";
 import { createReadStream, readFileSync } from "node:fs";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import http from "node:http";
 import crypto from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 
@@ -2291,10 +2291,10 @@ async function appHandler(req, res) {
   }
 }
 
-const server = createServer(appHandler);
 const isDirectRun = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 
 if (isDirectRun) {
+  const server = http.createServer(appHandler);
   server.listen(PORT, HOST, () => {
     console.log(`Kushwaha Store running at http://${HOST}:${PORT}`);
   });
