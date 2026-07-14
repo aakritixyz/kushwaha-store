@@ -2,7 +2,7 @@ import { createServer } from "node:http";
 import { readFile, writeFile, mkdir, stat } from "node:fs/promises";
 import { createReadStream, readFileSync } from "node:fs";
 import { extname, join, normalize } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import crypto from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 
@@ -91,7 +91,28 @@ async function writeDb(db) {
 }
 
 async function readSeedDb() {
-  return JSON.parse(await readFile(SEED_PATH, "utf8"));
+  try {
+    return JSON.parse(await readFile(SEED_PATH, "utf8"));
+  } catch {
+    try {
+      return JSON.parse(await readFile(DB_PATH, "utf8"));
+    } catch {
+      return {
+        store: {},
+        settings: {},
+        categories: [],
+        products: [],
+        customers: [],
+        orders: [],
+        ledger: [],
+        rewards: { clubName: "Community Rewards Club", draws: [], applications: [] },
+        blogPosts: [],
+        reviews: [],
+        receipts: [],
+        payments: []
+      };
+    }
+  }
 }
 
 function supabaseUrl(table, query = "") {
@@ -2271,8 +2292,9 @@ async function appHandler(req, res) {
 }
 
 const server = createServer(appHandler);
+const isDirectRun = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 
-if (!process.env.VERCEL) {
+if (isDirectRun) {
   server.listen(PORT, HOST, () => {
     console.log(`Kushwaha Store running at http://${HOST}:${PORT}`);
   });
