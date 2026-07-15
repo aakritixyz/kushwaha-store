@@ -379,9 +379,12 @@ const translations = {
     upiNowHelp: "Pay immediately using UPI QR/app",
     addToKhaata: "Add to khaata",
     addToKhaataHelp: "Add this order to your monthly udhaar account",
-    udhaarPaymentHelp: "Udhaar checkout appears after owner approval. Apply from your account.",
+    udhaarPaymentHelp: "First time? Tap Add to khaata to request owner approval. After approval, future orders can go straight to khaata.",
     udhaarPaymentApprovedHelp: "Approved udhaar customers can add this order to their monthly khaata and clear dues at the store at month-end.",
     udhaarCheckoutDenied: "Udhaar checkout is available only after store approval. Please request an Udhaar Account first.",
+    udhaarCheckoutPending: "Your khaata request is pending. Please use Pay at pickup or UPI now for this order.",
+    udhaarCheckoutRejected: "Khaata is not approved for this account yet. Please contact the store.",
+    udhaarApprovalRequested: "Khaata approval request sent to admin. For this order, please use Pay at pickup or UPI now.",
     udhaarOrderSuccess: "Order added to your khaata. Please clear the month-end due at the store.",
     paymentPending: "Payment is pending. Admin can confirm after UPI is received.",
     receiptNote: "Digital receipt is generated on-site after order placement and can be printed, downloaded later, or shared on WhatsApp.",
@@ -661,9 +664,12 @@ const translations = {
     upiNowHelp: "UPI QR/app से अभी payment करें",
     addToKhaata: "खाते में जोड़ें",
     addToKhaataHelp: "इस order को monthly उधार खाते में जोड़ें",
-    udhaarPaymentHelp: "उधार checkout owner approval के बाद दिखेगा. अपने account से request करें.",
+    udhaarPaymentHelp: "पहली बार? खाते में जोड़ें दबाकर owner approval request करें. Approval के बाद future orders सीधे खाते में जुड़ेंगे.",
     udhaarPaymentApprovedHelp: "Approved उधार customers इस order को monthly खाते में जोड़ सकते हैं और month-end पर store में dues clear कर सकते हैं.",
     udhaarCheckoutDenied: "उधार checkout सिर्फ store approval के बाद available है. पहले उधार account request करें.",
+    udhaarCheckoutPending: "आपकी khaata request pending है. इस order के लिए Pay at pickup या UPI now use करें.",
+    udhaarCheckoutRejected: "इस account के लिए khaata अभी approve नहीं है. कृपया store contact करें.",
+    udhaarApprovalRequested: "Khaata approval request admin को भेज दी गई. इस order के लिए Pay at pickup या UPI now use करें.",
     udhaarOrderSuccess: "Order आपके खाते में जोड़ दिया गया है. Month-end due store पर clear करें.",
     paymentPending: "Payment pending है. UPI मिलने के बाद admin confirm कर सकता है.",
     receiptNote: "डिजिटल रसीद ऑर्डर के बाद वेबसाइट पर बनेगी; प्रिंट, डाउनलोड या व्हाट्सऐप शेयर हो सकेगी.",
@@ -1223,15 +1229,51 @@ function renderPaymentModes() {
   const udhaarLabel = $("#udhaarPaymentMode");
   const udhaarInput = udhaarLabel?.querySelector("input");
   const help = $("#udhaarPaymentHelp");
-  if (udhaarLabel) udhaarLabel.hidden = !approved;
-  if (udhaarInput) udhaarInput.disabled = !approved;
+  if (udhaarLabel) udhaarLabel.hidden = false;
+  if (udhaarInput) udhaarInput.disabled = false;
   if (!approved && selectedPaymentMode() === "udhaar") {
     const pickup = document.querySelector('input[name="paymentMode"][value="pay_at_store"]');
     if (pickup) pickup.checked = true;
     state.paymentMode = "pay_at_store";
   }
-  if (help) help.textContent = approved ? t("udhaarPaymentApprovedHelp") : t("udhaarPaymentHelp");
+  if (help) {
+    help.textContent = approved
+      ? t("udhaarPaymentApprovedHelp")
+      : udhaarRequest?.status === "pending"
+        ? t("udhaarCheckoutPending")
+        : udhaarRequest?.status === "rejected"
+          ? t("udhaarCheckoutRejected")
+          : t("udhaarPaymentHelp");
+  }
   updatePaymentModeLabels();
+}
+
+function selectPayAtPickup() {
+  const pickup = document.querySelector('input[name="paymentMode"][value="pay_at_store"]');
+  if (pickup) pickup.checked = true;
+  state.paymentMode = "pay_at_store";
+  renderPaymentModes();
+}
+
+async function handleUdhaarPaymentChoice() {
+  if (isUdhaarApproved()) return true;
+  selectPayAtPickup();
+  if (!currentCustomer) {
+    alert(t("loginBeforeOrder"));
+    $("#accountDrawer").classList.add("open");
+    renderAccount();
+    return false;
+  }
+  if (udhaarRequest?.status === "pending") {
+    alert(t("udhaarCheckoutPending"));
+    return false;
+  }
+  if (udhaarRequest?.status === "rejected") {
+    alert(t("udhaarCheckoutRejected"));
+    return false;
+  }
+  await requestUdhaarAccount({ successMessage: t("udhaarApprovalRequested") });
+  return false;
 }
 
 function highlightPaymentOptions() {
@@ -2143,22 +2185,24 @@ async function loadUdhaarRequest() {
   renderCart();
 }
 
-async function requestUdhaarAccount() {
+async function requestUdhaarAccount(options = {}) {
   if (!currentCustomer) {
     alert(t("loginBeforeOrder"));
     $("#accountDrawer").classList.add("open");
     renderAccount();
-    return;
+    return null;
   }
-  if (!(await ensureBackendOnline())) return;
+  if (!(await ensureBackendOnline())) return null;
   try {
     const payload = await api(`/customers/${encodeURIComponent(currentCustomer.id)}/udhaar-request`, { method: "POST" });
     udhaarRequest = payload.application || null;
     renderAccount();
     await loadAdminUdhaarRequests().catch(() => {});
-    alert(t("udhaarRequestSuccess"));
+    alert(options.successMessage || t("udhaarRequestSuccess"));
+    return payload;
   } catch (error) {
     alert(error.message);
+    return null;
   }
 }
 
@@ -2803,7 +2847,7 @@ async function placeWebsiteOrder() {
   highlightPaymentOptions();
   const paymentMode = selectedPaymentMode();
   if (paymentMode === "udhaar" && !isUdhaarApproved()) {
-    alert(t("udhaarCheckoutDenied"));
+    await handleUdhaarPaymentChoice();
     return;
   }
   try {
@@ -3312,8 +3356,11 @@ $("#cartDrawer").addEventListener("click", (event) => {
 });
 
 $("#websiteOrder").addEventListener("click", placeWebsiteOrder);
-$("#paymentModes").addEventListener("change", () => {
+$("#paymentModes").addEventListener("change", async () => {
   state.paymentMode = selectedPaymentMode();
+  if (state.paymentMode === "udhaar") {
+    await handleUdhaarPaymentChoice();
+  }
 });
 $("#whatsappOrder").addEventListener("click", (event) => {
   if (!state.cart.size) {
