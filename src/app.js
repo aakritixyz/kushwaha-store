@@ -2654,6 +2654,26 @@ function applyRoute() {
   if (storyDropdown) storyDropdown.open = state.route === "blog";
 }
 
+function scrollForRoute(hash = "") {
+  const target = hash ? document.querySelector(hash) : null;
+  if (target) {
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
+  window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+}
+
+function navigateApp(url, { replace = false } = {}) {
+  if (url.pathname === "/admin") sessionStorage.setItem("ksAdminNavClick", "1");
+  state.route = routeFromPath();
+  if (replace) history.replaceState(null, "", `${url.pathname}${url.hash}`);
+  else history.pushState(null, "", `${url.pathname}${url.hash}`);
+  state.route = routeFromPath();
+  applyRoute();
+  renderAdminGate();
+  scrollForRoute(state.route === "store" ? url.hash : "");
+}
+
 function applyLanguage() {
   applyRoute();
   document.documentElement.lang = state.hindi ? "hi" : "en";
@@ -3390,6 +3410,21 @@ $("#adminLoginForm").addEventListener("submit", loginAdmin);
 $("#adminLogout").addEventListener("click", logoutAdmin);
 document.querySelectorAll('a[href="/admin"]').forEach((link) => {
   link.addEventListener("click", () => sessionStorage.setItem("ksAdminNavClick", "1"));
+});
+document.addEventListener("click", (event) => {
+  const link = event.target.closest("a[href]");
+  if (!link || link.target || link.hasAttribute("download")) return;
+  const url = new URL(link.getAttribute("href"), window.location.origin);
+  const appPaths = new Set(["/", "/admin", "/blog", "/udhaar", "/gallery", "/reviews", "/contact"]);
+  if (url.origin !== window.location.origin || !appPaths.has(url.pathname)) return;
+  event.preventDefault();
+  navigateApp(url);
+});
+window.addEventListener("popstate", () => {
+  state.route = routeFromPath();
+  applyRoute();
+  renderAdminGate();
+  scrollForRoute(state.route === "store" ? window.location.hash : "");
 });
 $("#ledgerAdjustForm").addEventListener("submit", submitLedgerAdjustment);
 $("#reviewForm").addEventListener("submit", submitReview);
