@@ -151,6 +151,7 @@ const state = {
   search: "",
   stock: "all",
   cart: new Map(),
+  activeOrderId: localStorage.getItem("ksActiveOrderId") || "",
   hindi: false,
   paymentMode: "pay_at_store",
   route: routeFromPath()
@@ -392,6 +393,13 @@ const translations = {
     udhaarOrderSuccess: "Order added to your khaata. Please clear the month-end due at the store.",
     paymentPending: "Payment is pending. Admin can confirm after UPI is received.",
     receiptNote: "Digital receipt is generated on-site after order placement and can be printed, downloaded later, or shared on WhatsApp.",
+    activeOrderTitle: "Order placed",
+    activeOrderHelp: "Your tokri is reserved with the store. Track it here until pickup is completed.",
+    activeOrderButton: "Order already placed",
+    activeOrderWhatsapp: "Order is already with store",
+    activeOrderCleared: "This order is completed. Your tokri is clear now.",
+    activeOrderAddBlocked: "One order is already active. Please wait for pickup completion before changing the tokri.",
+    reservedInOrder: "Reserved",
     fulfillmentNote: "Pickup ready in 10-15 min · Delivery within 2km coming soon",
     placeOrder: "Place website order",
     sendWhatsapp: "Send to Kushwaha Store WhatsApp",
@@ -681,6 +689,13 @@ const translations = {
     udhaarOrderSuccess: "Order आपके खाते में जोड़ दिया गया है. Month-end due store पर clear करें.",
     paymentPending: "Payment pending है. UPI मिलने के बाद admin confirm कर सकता है.",
     receiptNote: "डिजिटल रसीद ऑर्डर के बाद वेबसाइट पर बनेगी; प्रिंट, डाउनलोड या व्हाट्सऐप शेयर हो सकेगी.",
+    activeOrderTitle: "Order place हो गया",
+    activeOrderHelp: "आपकी टोकरी store के पास reserve है. Pickup complete होने तक status यहां देखें.",
+    activeOrderButton: "Order already placed",
+    activeOrderWhatsapp: "Order store के पास है",
+    activeOrderCleared: "यह order complete हो गया. आपकी टोकरी अब clear है.",
+    activeOrderAddBlocked: "एक order already active है. टोकरी बदलने से पहले pickup complete होने दें.",
+    reservedInOrder: "Reserved",
     fulfillmentNote: "पिकअप 10-15 मिनट में तैयार · 2km डिलीवरी जल्द आएगी",
     placeOrder: "वेबसाइट ऑर्डर करें",
     sendWhatsapp: "कुशवाहा स्टोर व्हाट्सऐप पर भेजें",
@@ -1844,6 +1859,50 @@ function checkoutTotals(lines) {
   return { subtotal, discount, payable, loyalty };
 }
 
+function setActiveCartOrder(order) {
+  state.activeOrderId = order?.id || "";
+  if (state.activeOrderId) localStorage.setItem("ksActiveOrderId", state.activeOrderId);
+  else localStorage.removeItem("ksActiveOrderId");
+}
+
+function activeCartOrder() {
+  if (!state.activeOrderId) return null;
+  const order = customerOrders.find((item) => item.id === state.activeOrderId)
+    || orders.find((item) => item.id === state.activeOrderId);
+  if (!order) return null;
+  if (["Completed", "Cancelled"].includes(order.status)) {
+    state.cart.clear();
+    setActiveCartOrder(null);
+    return null;
+  }
+  return order;
+}
+
+function syncActiveOrderFromLoadedOrders() {
+  if (state.activeOrderId && currentCustomer && !customerOrders.some((order) => order.id === state.activeOrderId)) {
+    setActiveCartOrder(null);
+  }
+  return activeCartOrder();
+}
+
+function activeOrderCard(order) {
+  if (!order) return "";
+  const steps = ["Placed", "Being Packed", "Ready", "Completed"];
+  const activeIndex = Math.max(0, steps.indexOf(order.status));
+  return `
+    <div class="active-order-card">
+      <div>
+        <span class="status-chip">${escapeHtml(order.status || "Placed")}</span>
+        <strong>${t("activeOrderTitle")} · ${escapeHtml(order.id)}</strong>
+        <small>${t("activeOrderHelp")}</small>
+      </div>
+      <div class="tracking-mini" aria-label="Order tracking">
+        ${steps.map((_, index) => `<span class="${index <= activeIndex ? "done" : ""}"></span>`).join("")}
+      </div>
+    </div>
+  `;
+}
+
 function whatsappCustomerLines() {
   if (!currentCustomer) return [];
   return [
@@ -1872,6 +1931,7 @@ function whatsappOrderUrl(lines = cartLines()) {
 
 function renderCart() {
   const lines = cartLines();
+  const activeOrder = activeCartOrder();
   const totalQty = lines.length;
   const totals = checkoutTotals(lines);
   renderPaymentModes();
@@ -1880,13 +1940,15 @@ function renderCart() {
   $("#cartDiscount").textContent = `-${rupee.format(totals.discount)}`;
   $("#cartPayable").textContent = rupee.format(totals.payable);
   $("#loyaltyEarned").textContent = `${totals.loyalty} ${t("pointsSuffix")}`;
-  $("#cartItems").innerHTML = lines.map((item) => `
+  $("#cartItems").innerHTML = `${activeOrderCard(activeOrder)}${lines.map((item) => `
     <div class="cart-item">
       <div>
         <strong>${item.name}</strong>
         <small>${formatQuantity(item, item.qty)} · ${rupee.format(item.price)} / ${item.unit}</small>
       </div>
-      ${item.loose ? `
+      ${activeOrder ? `
+      <small class="cart-item-locked">${t("reservedInOrder")}</small>
+      ` : item.loose ? `
       <div class="qty-controls">
         <button data-remove="${item.id}" aria-label="Remove ${item.name}">×</button>
       </div>
@@ -1898,9 +1960,13 @@ function renderCart() {
       </div>
       `}
     </div>
-  `).join("") || `<p>${t("emptyCart")}</p>`;
+  `).join("") || (activeOrder ? "" : `<p>${t("emptyCart")}</p>`)}`;
 
-  $("#whatsappOrder").href = whatsappOrderUrl(lines);
+  $("#websiteOrder").disabled = Boolean(activeOrder) || !lines.length;
+  $("#websiteOrder").textContent = activeOrder ? t("activeOrderButton") : t("placeOrder");
+  $("#whatsappOrder").href = activeOrder ? "#" : whatsappOrderUrl(lines);
+  $("#whatsappOrder").classList.toggle("disabled", Boolean(activeOrder));
+  $("#whatsappOrder").textContent = activeOrder ? t("activeOrderWhatsapp") : t("sendWhatsapp");
   refreshPaymentOptions().catch(() => {});
 }
 
@@ -2283,6 +2349,8 @@ async function loadCustomerOrders() {
   const payload = await api(`/customers/${encodeURIComponent(currentCustomer.id)}/orders`);
   saveCustomer(payload.customer || currentCustomer);
   customerOrders = payload.orders || [];
+  syncActiveOrderFromLoadedOrders();
+  renderCart();
   renderAccount();
   await loadCustomerStatement();
   await loadRewardApplications().catch(() => {});
@@ -2845,12 +2913,17 @@ function applyLanguage() {
   setText("#websiteOrder", t("placeOrder"));
   setText("#whatsappOrder", t("sendWhatsapp"));
   setTexts(".bottom-nav a", [t("home"), t("navCatalog"), t("navGallery"), t("navReviews"), t("navContact"), t("navUdhaar"), t("navAdmin")]);
+  renderCart();
   renderAccount();
   renderReviews();
   renderAdminGate();
 }
 
 function addToCart(id) {
+  if (activeCartOrder()) {
+    alert(t("activeOrderAddBlocked"));
+    return;
+  }
   const product = products.find((item) => item.id === id);
   const current = state.cart.get(id) || 0;
   if (!product || current >= product.stock) return;
@@ -2876,6 +2949,10 @@ function updateVariantCard(select) {
 }
 
 function addLooseToCart(id) {
+  if (activeCartOrder()) {
+    alert(t("activeOrderAddBlocked"));
+    return;
+  }
   const product = products.find((item) => item.id === id);
   if (!product) return;
   const amount = Number(document.querySelector(`[data-loose-value="${id}"]`)?.value || 0);
@@ -2928,7 +3005,7 @@ async function placeWebsiteOrder() {
     orders = [payload.order, ...orders];
     saveCustomer(payload.customer || currentCustomer);
     customerOrders = [payload.order, ...customerOrders];
-    state.cart.clear();
+    setActiveCartOrder(payload.order);
     renderProducts();
     renderCart();
     renderOrders();
@@ -3047,6 +3124,7 @@ async function loginCustomer(event) {
     });
     saveCustomer(payload.customer);
     customerOrders = payload.orders || [];
+    syncActiveOrderFromLoadedOrders();
     await loadRewardApplications();
     await loadUdhaarRequest();
     renderAccount();
@@ -3069,6 +3147,7 @@ async function signupCustomer() {
     });
     saveCustomer(payload.customer);
     customerOrders = payload.orders || [];
+    syncActiveOrderFromLoadedOrders();
     await loadRewardApplications();
     await loadUdhaarRequest();
     renderAccount();
@@ -3083,6 +3162,8 @@ function logoutCustomer() {
   customerOrders = [];
   rewardApplications = [];
   udhaarRequest = null;
+  setActiveCartOrder(null);
+  state.cart.clear();
   renderAccount();
   renderRewardCards();
   renderCart();
@@ -3102,7 +3183,12 @@ async function updateOrderStatus(orderId, status) {
     const updated = payload.order || payload;
     orders = orders.map((order) => order.id === orderId ? updated : order);
     customerOrders = customerOrders.map((order) => order.id === orderId ? updated : order);
+    if (updated.id === state.activeOrderId && ["Completed", "Cancelled"].includes(updated.status)) {
+      alert(t("activeOrderCleared"));
+    }
+    activeCartOrder();
     renderOrders();
+    renderCart();
     renderCustomerOrders();
     renderAdminSummary(payload.summary);
   } catch (error) {
@@ -3318,6 +3404,11 @@ document.addEventListener("click", (event) => {
     }
   }
 
+  if ((incButton || decButton || removeButton) && activeCartOrder()) {
+    alert(t("activeOrderAddBlocked"));
+    return;
+  }
+
   if (incButton) addToCart(incButton.dataset.inc);
 
   if (decButton) {
@@ -3427,6 +3518,11 @@ $("#paymentModes").addEventListener("change", async () => {
   }
 });
 $("#whatsappOrder").addEventListener("click", (event) => {
+  if (activeCartOrder()) {
+    event.preventDefault();
+    alert(t("activeOrderAddBlocked"));
+    return;
+  }
   if (!state.cart.size) {
     event.preventDefault();
     document.querySelector("#catalog")?.scrollIntoView({ behavior: "smooth" });
