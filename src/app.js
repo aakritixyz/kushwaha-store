@@ -400,6 +400,7 @@ const translations = {
     loginBeforeOrder: "Please login or create an account so this order is saved under your name.",
     minimumOrderValue: "Minimum online order value is ₹29.",
     orderSuccess: "Stock updated and loyalty points added.",
+    feedbackPrompt: "Care to drop a feedback?",
     ordersReady: "orders",
     readyForPickup: "ready for pickup",
     orderedSeed: "ordered in seed data",
@@ -677,6 +678,7 @@ const translations = {
     loginBeforeOrder: "Order आपके नाम से save करने के लिए login या खाता बनाएं.",
     minimumOrderValue: "Online order की minimum value ₹29 है.",
     orderSuccess: "स्टॉक update हो गया और लॉयल्टी पॉइंट जुड़ गए.",
+    feedbackPrompt: "एक feedback देना चाहेंगे?",
     ordersReady: "orders",
     readyForPickup: "pickup ready",
     orderedSeed: "seed data में ordered",
@@ -1908,6 +1910,13 @@ function renderReviews() {
   `).join("") || `<p class="reviews-empty">${t("noReviews")}</p>`;
 }
 
+function askForFeedback() {
+  window.setTimeout(() => {
+    if (!confirm(t("feedbackPrompt"))) return;
+    window.location.href = "/reviews";
+  }, 250);
+}
+
 function renderAccount() {
   const drawer = $("#accountDrawer");
   if (!drawer) return;
@@ -2792,15 +2801,18 @@ async function placeWebsiteOrder() {
       await loadUdhaarRequest().catch(() => {});
       await loadCustomerStatement().catch(() => {});
       alert(`${payload.order.id} placed. ${t("udhaarOrderSuccess")}`);
+      askForFeedback();
       return;
     }
     if (paymentMode === "upi_online") {
       const options = await api(`/payments/options?amount=${encodeURIComponent(payload.order.total || payload.order.payable || totals.payable)}&orderId=${encodeURIComponent(payload.order.id)}`);
       if (options.upiIntentUrl) window.open(options.upiIntentUrl, "_blank", "noopener,noreferrer");
       alert(`${payload.order.id} placed. ${t("paymentPending")}`);
+      askForFeedback();
       return;
     }
     alert(`Order ${payload.order.id} placed. ${t("orderSuccess")}`);
+    askForFeedback();
   } catch (error) {
     alert(error.message);
   }
