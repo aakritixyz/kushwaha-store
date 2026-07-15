@@ -879,30 +879,33 @@ async function writeSupabaseDb(db) {
     created_at: entry.createdAt || writeTime
   })));
 
-  const writes = [];
+  const baseWrites = [];
   if (!previousSettingsRow || compactJson(settingsRow) !== compactJson(previousSettingsRow)) {
-    writes.push(supabaseRequest("store_settings", {
+    baseWrites.push(supabaseRequest("store_settings", {
       method: "POST",
       query: "?on_conflict=id",
       body: [{ ...settingsRow, updated_at: writeTime }],
       prefer: "resolution=merge-duplicates,return=minimal"
     }));
   }
-  writes.push(
+  baseWrites.push(
     upsertRows("categories", changedRows(categoryRows, previousCategoryRows)),
     upsertRows("customers", changedRows(customerRows, previousCustomerRows).map((row) => ({ ...row, updated_at: writeTime }))),
     upsertProductRows(changedRows(productRows, previousProductRows).map((row) => ({ ...row, updated_at: writeTime }))),
     upsertRows("ledger_accounts", changedRows(ledgerAccountRows, previousLedgerAccountRows).map((row) => ({ ...row, updated_at: writeTime }))),
     upsertRows("rewards_draws", changedRows(rewardRows, previousRewardRows)),
     upsertRows("blog_posts", changedRows(blogRows, previousBlogRows)),
-    upsertOptionalRows("reviews", changedRows(reviewRows, previousReviewRows)),
-    upsertRows("orders", changedRows(orderRows, previousOrderRows)),
+    upsertOptionalRows("reviews", changedRows(reviewRows, previousReviewRows))
+  );
+  await Promise.all(baseWrites);
+
+  await upsertRows("orders", changedRows(orderRows, previousOrderRows));
+  await Promise.all([
     upsertRows("order_items", changedRows(orderItemRows, previousOrderItemRows)),
     upsertRows("receipts", changedRows(receiptRows, previousReceiptRows)),
     upsertRows("payments", changedRows(paymentRows, previousPaymentRows)),
     upsertRows("ledger_entries", changedRows(ledgerEntryRows, previousLedgerEntryRows))
-  );
-  await Promise.all(writes);
+  ]);
 
   supabaseDbCache = structuredClone(db);
   supabaseDbCacheAt = Date.now();

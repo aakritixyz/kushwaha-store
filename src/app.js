@@ -379,7 +379,11 @@ const translations = {
     upiNowHelp: "Pay immediately using UPI QR/app",
     addToKhaata: "Add to khaata",
     addToKhaataHelp: "Add this order to your monthly udhaar account",
-    udhaarPaymentHelp: "First time? Tap Add to khaata to request owner approval. After approval, future orders can go straight to khaata.",
+    applyForKhaata: "Apply for khaata",
+    applyForKhaataHelp: "Request owner approval for monthly udhaar",
+    khaataPendingTitle: "Khaata request pending",
+    khaataPendingHelp: "Use Pay at pickup until admin approves",
+    udhaarPaymentHelp: "First time? Tap Apply for khaata to request owner approval. After approval, future orders can go straight to khaata.",
     udhaarPaymentApprovedHelp: "Approved udhaar customers can add this order to their monthly khaata and clear dues at the store at month-end.",
     udhaarCheckoutDenied: "Udhaar checkout is available only after store approval. Please request an Udhaar Account first.",
     udhaarCheckoutPending: "Your khaata request is pending. Please use Pay at pickup or UPI now for this order.",
@@ -664,7 +668,11 @@ const translations = {
     upiNowHelp: "UPI QR/app से अभी payment करें",
     addToKhaata: "खाते में जोड़ें",
     addToKhaataHelp: "इस order को monthly उधार खाते में जोड़ें",
-    udhaarPaymentHelp: "पहली बार? खाते में जोड़ें दबाकर owner approval request करें. Approval के बाद future orders सीधे खाते में जुड़ेंगे.",
+    applyForKhaata: "खाते के लिए apply करें",
+    applyForKhaataHelp: "Monthly उधार के लिए owner approval request करें",
+    khaataPendingTitle: "खाता request pending है",
+    khaataPendingHelp: "Admin approval तक Pay at pickup use करें",
+    udhaarPaymentHelp: "पहली बार? खाते के लिए apply करें. Approval के बाद future orders सीधे खाते में जुड़ेंगे.",
     udhaarPaymentApprovedHelp: "Approved उधार customers इस order को monthly खाते में जोड़ सकते हैं और month-end पर store में dues clear कर सकते हैं.",
     udhaarCheckoutDenied: "उधार checkout सिर्फ store approval के बाद available है. पहले उधार account request करें.",
     udhaarCheckoutPending: "आपकी khaata request pending है. इस order के लिए Pay at pickup या UPI now use करें.",
@@ -1181,6 +1189,14 @@ async function api(path, options = {}, meta = {}) {
   return payload;
 }
 
+function friendlyOrderError(error) {
+  const message = String(error?.message || "");
+  if (/Supabase|foreign key|constraint|order_items|orders|JWT|PGRST/i.test(message)) {
+    return "Order save had a temporary server issue. Please try once more, or send the order on WhatsApp.";
+  }
+  return message || "Something went wrong. Please try again.";
+}
+
 function saveAdminSession(session) {
   adminSession = session || null;
   if (adminSession) localStorage.setItem("ksAdmin", JSON.stringify(adminSession));
@@ -1207,10 +1223,15 @@ function isUdhaarApproved() {
 
 function updatePaymentModeLabels() {
   const labels = document.querySelectorAll("#paymentModes label");
+  const udhaarCopy = isUdhaarApproved()
+    ? { title: t("addToKhaata"), help: t("addToKhaataHelp") }
+    : udhaarRequest?.status === "pending"
+      ? { title: t("khaataPendingTitle"), help: t("khaataPendingHelp") }
+      : { title: t("applyForKhaata"), help: t("applyForKhaataHelp") };
   const values = {
     pay_at_store: { title: t("payAtPickup"), help: t("payAtPickupHelp") },
     upi_online: { title: t("upiNow"), help: t("upiNowHelp") },
-    udhaar: { title: t("addToKhaata"), help: t("addToKhaataHelp") }
+    udhaar: udhaarCopy
   };
   labels.forEach((label) => {
     const input = label.querySelector("input");
@@ -2930,7 +2951,7 @@ async function placeWebsiteOrder() {
     alert(`Order ${payload.order.id} placed. ${t("orderSuccess")}`);
     askForFeedback();
   } catch (error) {
-    alert(error.message);
+    alert(friendlyOrderError(error));
   }
 }
 
