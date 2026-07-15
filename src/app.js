@@ -374,8 +374,11 @@ const translations = {
     payOnline: "Pay online or at pickup",
     paymentCopy: "Scan UPI QR now or pay cash/UPI when picking up.",
     payAtPickup: "Pay at pickup",
+    payAtPickupHelp: "Cash or UPI when collecting from store",
     upiNow: "UPI now",
+    upiNowHelp: "Pay immediately using UPI QR/app",
     addToKhaata: "Add to khaata",
+    addToKhaataHelp: "Add this order to your monthly udhaar account",
     udhaarPaymentHelp: "Udhaar checkout appears after owner approval. Apply from your account.",
     udhaarPaymentApprovedHelp: "Approved udhaar customers can add this order to their monthly khaata and clear dues at the store at month-end.",
     udhaarCheckoutDenied: "Udhaar checkout is available only after store approval. Please request an Udhaar Account first.",
@@ -652,8 +655,11 @@ const translations = {
     payOnline: "ऑनलाइन या पिकअप पर भुगतान करें",
     paymentCopy: "अभी UPI QR scan करें या pickup पर Cash/UPI दें.",
     payAtPickup: "Pickup पर payment",
+    payAtPickupHelp: "Store से pickup करते समय Cash या UPI दें",
     upiNow: "अभी UPI",
+    upiNowHelp: "UPI QR/app से अभी payment करें",
     addToKhaata: "खाते में जोड़ें",
+    addToKhaataHelp: "इस order को monthly उधार खाते में जोड़ें",
     udhaarPaymentHelp: "उधार checkout owner approval के बाद दिखेगा. अपने account से request करें.",
     udhaarPaymentApprovedHelp: "Approved उधार customers इस order को monthly खाते में जोड़ सकते हैं और month-end पर store में dues clear कर सकते हैं.",
     udhaarCheckoutDenied: "उधार checkout सिर्फ store approval के बाद available है. पहले उधार account request करें.",
@@ -1194,14 +1200,19 @@ function isUdhaarApproved() {
 function updatePaymentModeLabels() {
   const labels = document.querySelectorAll("#paymentModes label");
   const values = {
-    pay_at_store: t("payAtPickup"),
-    upi_online: t("upiNow"),
-    udhaar: t("addToKhaata")
+    pay_at_store: { title: t("payAtPickup"), help: t("payAtPickupHelp") },
+    upi_online: { title: t("upiNow"), help: t("upiNowHelp") },
+    udhaar: { title: t("addToKhaata"), help: t("addToKhaataHelp") }
   };
   labels.forEach((label) => {
     const input = label.querySelector("input");
     label.textContent = "";
-    if (input) label.append(input, ` ${values[input.value] || input.value}`);
+    if (!input) return;
+    const copy = values[input.value] || { title: input.value, help: "" };
+    const text = document.createElement("span");
+    text.className = "payment-option-copy";
+    text.innerHTML = `<strong>${copy.title}</strong>${copy.help ? `<small>${copy.help}</small>` : ""}`;
+    label.append(input, text);
   });
 }
 
