@@ -1731,10 +1731,10 @@ footer {
 .fulfillment-note { display: block !important; padding: 10px; border-radius: 8px; background: #fff2be; font-weight: 800; }
 .upi-box {
   display: grid !important;
-  grid-template-columns: 86px 1fr;
-  gap: 10px;
+  grid-template-columns: 140px 1fr;
+  gap: 14px;
   align-items: center;
-  padding: 10px;
+  padding: 14px;
   border: 2px dashed var(--indigo);
   border-radius: 8px;
   background: rgba(255,255,255,0.7);
@@ -1745,7 +1745,7 @@ footer {
 .upi-qr {
   display: grid !important;
   place-items: center;
-  width: 76px;
+  width: 132px;
   aspect-ratio: 1;
   color: var(--indigo);
   background:
@@ -1759,7 +1759,7 @@ footer {
   overflow: hidden;
 }
 .upi-qr.has-qr { background: white; }
-.upi-qr img { width: 100%; height: 100%; object-fit: cover; }
+.upi-qr img { width: 100%; height: 100%; object-fit: contain; }
 .payment-modes {
   display: grid !important;
   grid-template-columns: 1fr;
@@ -2209,8 +2209,13 @@ footer {
     padding-bottom: env(safe-area-inset-bottom);
   }
 
-  .upi-box { grid-template-columns: 72px 1fr; }
-  .upi-qr { width: 62px; }
+  .upi-box {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .upi-qr { width: min(190px, 72vw); }
   .reward-application-row { grid-template-columns: 1fr; }
 }
 
