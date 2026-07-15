@@ -1396,7 +1396,10 @@ const categoryCoverImages = {
   healthDrinks: "https://imgs.search.brave.com/ssfb4olWQTzWn9ukvs1tphP7EKz7aZ0uAOxKmJ9UATA/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9hc3Nl/dHMudXBzdG94LmNv/bS9jb250ZW50L2Fz/c2V0cy9pbWFnZXMv/Y21zLzIwMjQ0MjUv/SG9ybGlja3Mud2Vi/cA",
   biscuits: "https://imgs.search.brave.com/QJ9NkzgQPqCuuxi1Bt4iSLeXyMdby_FGwm_nxQAkRp4/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly90My5m/dGNkbi5uZXQvanBn/LzAzLzgxLzkxLzAw/LzM2MF9GXzM4MTkx/MDA3MF9Vb3ZBSnJv/aGY4b1RnQ2lRb2dt/a2dqR05wdFRPYmxT/di5qcGc",
   noodlesPasta: "https://imgs.search.brave.com/RuWCVPyLNPTr0_FLvzHmhzefNQIoWtIw9GKleoXXbco/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9zdGF0/aWMudmVjdGVlenku/Y29tL3N5c3RlbS9y/ZXNvdXJjZXMvdGh1/bWJuYWlscy8wNTIv/NTQxLzExNC9zbWFs/bC9wYXN0YS1ub29k/bGVzLWZvci1jb29r/aW5nLWl0YWxpYW4t/Zm9vZC1waG90by5q/cGc",
-  chocolates: "https://imgs.search.brave.com/rgUwrAUjHdu1Um63OsQXoU7qZ7skz7CT88j3o7NEVd0/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9pLnBp/bmltZy5jb20vb3Jp/Z2luYWxzLzc2L2I4/L2U0Lzc2YjhlNDg0/NWQyMzkxNjBlMjhi/YTIxOGRkZTQ4YTU3/LmpwZw"
+  chocolates: "https://imgs.search.brave.com/rgUwrAUjHdu1Um63OsQXoU7qZ7skz7CT88j3o7NEVd0/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9pLnBp/bmltZy5jb20vb3Jp/Z2luYWxzLzc2L2I4/L2U0Lzc2YjhlNDg0/NWQyMzkxNjBlMjhi/YTIxOGRkZTQ4YTU3/LmpwZw",
+  shampooConditioner: "https://imgs.search.brave.com/j0VsXWDqi42jM_2piG87A5TjpmniWMdFSzEee3RQIdA/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly90aHVt/YnMuZHJlYW1zdGlt/ZS5jb20vYi92YXJp/b3VzLWJyYW5kcy1z/aGFtcG9vLXByb2R1/Y3RzLXNoZWxmLXN0/b3JlLXN1cGVybWFy/a2V0LWt1YWxhLWx1/bXB1ci1tYWxheXNp/YS1mZWJydWFyeS1o/YWlyLWNhcmUtcHJv/ZHVjdC0yNDA3Nzgx/NjMuanBn",
+  soapsHandwash: "https://imgs.search.brave.com/Mxtuqa-2CR18MflIU3Xj7D5y1bwA3rQT_x6XP58pm7E/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9jcGlt/Zy50aXN0YXRpYy5j/b20vMTAzOTQ2MDAv/Yi80L0RldHRvbC1I/YW5kd2FzaC1Gb2Ft/LVNvYXAtUG91Y2gt/MjAwbWwuanBn",
+  toothpaste: "https://imgs.search.brave.com/UN5PrxkrSwAb_j7nVfYn-Ve_j3vvi6_2qz4SSK4b3-A/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9pbWcu/eW91dHViZS5jb20v/dmkvMC1DOXFwaTV5/QVEvaHFkZWZhdWx0/LmpwZw"
 };
 
 function categoryTileImage(tile) {
@@ -1480,9 +1483,9 @@ function categorySections() {
     {
       title: hi ? "Personal Care" : "Personal Care",
       tiles: [
-        { label: hi ? "Shampoo & Conditioner" : "Shampoo & Conditioner", categoryId: "cat-personal-care", imageUrl: "https://placehold.co/420x260/fff3d5/111d4a/png?text=Shampoo", filter: "shampoo|conditioner|clinic|head|sunsilk|dove" },
-        { label: hi ? "Soaps & Handwash" : "Soaps & Handwash", categoryId: "cat-personal-care", imageHint: "soap", filter: "soap|handwash|santoor|dettol|lifebuoy|lux" },
-        { label: hi ? "Toothpaste & Toothbrush" : "Toothpaste & Toothbrush", categoryId: "cat-personal-care", imageUrl: "https://placehold.co/420x260/fff3d5/111d4a/png?text=Toothpaste", filter: "toothpaste|toothbrush|colgate|pepsodent|oral" }
+        { label: hi ? "Shampoo & Conditioner" : "Shampoo & Conditioner", categoryId: "cat-personal-care", imageUrl: categoryCoverImages.shampooConditioner, filter: "shampoo|conditioner|clinic|head|sunsilk|dove" },
+        { label: hi ? "Soaps & Handwash" : "Soaps & Handwash", categoryId: "cat-personal-care", imageUrl: categoryCoverImages.soapsHandwash, filter: "soap|handwash|santoor|dettol|lifebuoy|lux" },
+        { label: hi ? "Toothpaste & Toothbrush" : "Toothpaste & Toothbrush", categoryId: "cat-personal-care", imageUrl: categoryCoverImages.toothpaste, filter: "toothpaste|toothbrush|colgate|pepsodent|oral" }
       ]
     }
   ];
