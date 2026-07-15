@@ -2380,6 +2380,10 @@ async function handleApi(req, res, url) {
     customer.loyaltyPoints += db.settings.loyaltyEnabled ? loyaltyEarned : 0;
     customer.monthlySpend += payable;
     const paymentMode = body.paymentMode || "pay_at_store";
+    const udhaarApplication = findUdhaarApplication(db, customer);
+    if (paymentMode === "udhaar" && udhaarApplication?.status !== "approved") {
+      return badRequest(res, "Udhaar checkout is available only after owner approval");
+    }
     const paymentStatus = paymentMode === "udhaar" ? "monthly_due" : paymentMode === "upi_online" ? "pending_online" : "due_on_pickup";
     const order = {
       id: nextOrderId(db),

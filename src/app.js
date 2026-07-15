@@ -364,6 +364,11 @@ const translations = {
     paymentCopy: "Scan UPI QR now or pay cash/UPI when picking up.",
     payAtPickup: "Pay at pickup",
     upiNow: "UPI now",
+    addToKhaata: "Add to khaata",
+    udhaarPaymentHelp: "Udhaar checkout appears after owner approval. Apply from your account.",
+    udhaarPaymentApprovedHelp: "Approved udhaar customers can add this order to their monthly khaata and clear dues at the store at month-end.",
+    udhaarCheckoutDenied: "Udhaar checkout is available only after store approval. Please request an Udhaar Account first.",
+    udhaarOrderSuccess: "Order added to your khaata. Please clear the month-end due at the store.",
     paymentPending: "Payment is pending. Admin can confirm after UPI is received.",
     receiptNote: "Digital receipt is generated on-site after order placement and can be printed, downloaded later, or shared on WhatsApp.",
     fulfillmentNote: "Pickup ready in 10-15 min · Delivery within 2km coming soon",
@@ -636,6 +641,11 @@ const translations = {
     paymentCopy: "अभी UPI QR scan करें या pickup पर Cash/UPI दें.",
     payAtPickup: "Pickup पर payment",
     upiNow: "अभी UPI",
+    addToKhaata: "खाते में जोड़ें",
+    udhaarPaymentHelp: "उधार checkout owner approval के बाद दिखेगा. अपने account से request करें.",
+    udhaarPaymentApprovedHelp: "Approved उधार customers इस order को monthly खाते में जोड़ सकते हैं और month-end पर store में dues clear कर सकते हैं.",
+    udhaarCheckoutDenied: "उधार checkout सिर्फ store approval के बाद available है. पहले उधार account request करें.",
+    udhaarOrderSuccess: "Order आपके खाते में जोड़ दिया गया है. Month-end due store पर clear करें.",
     paymentPending: "Payment pending है. UPI मिलने के बाद admin confirm कर सकता है.",
     receiptNote: "डिजिटल रसीद ऑर्डर के बाद वेबसाइट पर बनेगी; प्रिंट, डाउनलोड या व्हाट्सऐप शेयर हो सकेगी.",
     fulfillmentNote: "पिकअप 10-15 मिनट में तैयार · 2km डिलीवरी जल्द आएगी",
@@ -820,6 +830,7 @@ const faqContent = {
       ["Order Tracking", [["What are the order status steps?", "Order Placed means the cart has been shared by website or WhatsApp. Being Packed means the owner is checking shelf stock. Ready for Pickup means the order can be collected from the store. Completed means pickup and cash/UPI payment are done."], ["Where can I see my order journey?", "After login, customers can see the order journey inside their account for each website order."]]],
       ["Payments", [["What payment methods do you accept?", "Cash and UPI are supported right now. Card/Razorpay can be added later if needed."], ["Can I pay online in advance or only at pickup?", "You can choose UPI now or pay at pickup."], ["Is it safe to pay online on your site?", "UPI opens through your phone's UPI app/QR flow. Do not share UPI PIN with anyone."], ["What if my payment failed but money was deducted?", "Contact the store with your order ID and UPI reference so the owner can verify and update payment status."], ["Can I get a refund if I return an item?", "Refunds can be recorded by the admin after checking the item and order."]]],
       ["Products & Availability", [["Do you sell loose/unpackaged items by weight?", "Yes. Loose items can be entered by custom quantity such as 50g, 200g or 1kg."], ["What if an item I reserved is out of stock when I arrive?", "The owner will confirm stock while packing and suggest a replacement or remove the item."]]],
+      ["Udhaar / Khaata", [["How do I apply for udhaar?", "Login to your customer account and tap Request Udhaar Account. The store owner will approve it for trusted monthly customers."], ["How do I add an order to my khaata?", "After approval, checkout will show Add to khaata. Orders placed with this option are added to your monthly udhaar ledger."], ["How do I clear my month-end due?", "Open the Udhaar page after login to see your month-wise debit, credit/paid amount, and final due. Please clear the amount at the store at month-end."]]],
       ["Store Info", [["What are your store hours?", "The shop is open from 6 am-10 pm, Monday to Sunday. Lunch break is usually around 2:30-4:00 pm."], ["Where is the store located?", "Chanakya Place, C-39, Part - 1, Rani Bagh, Delhi, 110059, India."], ["Are you open on Sundays and holidays?", "Yes, regular listed hours are 6 am-10 pm every day, with lunch break usually around 2:30-4:00 pm. If the shop appears closed, please call or WhatsApp 9136278478 before visiting."]]],
       ["Loyalty & Offers", [["How do I earn and redeem loyalty points?", "Every order earns 1% loyalty points on the total order value. Points are added to your account and can be redeemed on your next order. For more information, please contact the store."], ["How do monthly gifts work?", "Customers crossing ₹5,000 shopping in a month can receive monthly gifts at month-end. Gift details are confirmed by the store."], ["How does the Lucky Draw program work?", "Customers can enroll by paying ₹1,000 every month. One lucky draw is taken out each month, and the winner receives products worth ₹10,500, excluding dairy, ghee, atta and sugar. The scheme runs for 10 months; at the end, customers who have not won also receive products worth ₹10,500. Please contact the store for full terms before enrolling."]]],
       ["Language & Accessibility", [["Can I use the website in Hindi?", "Yes. Use the Hindi/English toggle in the header."], ["Can I talk to someone directly about my order?", "Yes. Use the call or WhatsApp button to contact Kushwaha Store directly."]]],
@@ -834,6 +845,7 @@ const faqContent = {
       ["Order Tracking", [["Order status steps क्या हैं?", "Order Placed का मतलब cart website या WhatsApp से share हो गया. Being Packed का मतलब owner shelf stock check कर रहा है. Ready for Pickup का मतलब order store से collect किया जा सकता है. Completed का मतलब pickup और cash/UPI payment complete हो गए."], ["Order journey कहां दिखेगी?", "Login के बाद customers अपने account में हर website order की journey देख सकते हैं."]]],
       ["Payments", [["Payment methods क्या हैं?", "अभी Cash और UPI supported हैं. Card/Razorpay बाद में जरूरत पड़े तो add हो सकता है."], ["Advance online pay कर सकते हैं या pickup पर?", "आप UPI now या pickup पर payment choose कर सकते हैं."], ["Online payment safe है?", "UPI आपके phone के UPI app/QR flow से खुलता है. UPI PIN किसी से share न करें."], ["Payment failed पर पैसा कट गया तो?", "Order ID और UPI reference के साथ store contact करें ताकि owner verify करके payment status update कर सके."], ["Return पर refund मिलेगा?", "Item और order check करने के बाद admin refund record कर सकता है."]]],
       ["Products & Availability", [["क्या loose/unpackaged items weight से मिलते हैं?", "हां. Loose items में 50g, 200g या 1kg जैसी custom quantity डाल सकते हैं."], ["Reserved item out of stock निकला तो?", "Owner packing के समय stock confirm करेगा और replacement suggest करेगा या item remove करेगा."]]],
+      ["उधार / खाता", [["उधार के लिए apply कैसे करें?", "Customer account में login करके Request Udhaar Account दबाएं. Store owner trusted monthly customers के लिए approve करेगा."], ["Order खाते में कैसे जोड़ें?", "Approval के बाद checkout में खाते में जोड़ें option दिखेगा. इस option से placed order monthly udhaar ledger में जुड़ जाएगा."], ["Month-end due कैसे clear करना है?", "Login के बाद Udhaar page पर month-wise debit, credit/paid amount और final due दिखेगा. Month-end पर store में amount clear करें."]]],
       ["Store Info", [["Store hours क्या हैं?", "दुकान Monday-Sunday 6 am-10 pm खुली रहती है. Lunch break usually 2:30-4:00 pm के around होता है."], ["Store कहां है?", "Chanakya Place, C-39, Part - 1, Rani Bagh, Delhi, 110059, India."], ["Sundays और holidays पर खुले हैं?", "हां, regular timing हर दिन 6 am-10 pm है. Lunch break usually 2:30-4:00 pm. अगर दुकान बंद मिले तो आने से पहले 9136278478 पर call/WhatsApp करें."]]],
       ["Loyalty & Offers", [["Loyalty points कैसे मिलेंगे?", "हर order की total value पर 1% loyalty points account में जुड़ेंगे और next order में redeem हो सकते हैं. ज्यादा जानकारी के लिए store contact करें."], ["Monthly gifts कैसे मिलेंगे?", "महीने में ₹5,000 shopping cross करने वाले customers को month-end gifts मिल सकते हैं. Gift details store confirm करेगा."], ["Lucky Draw program कैसे काम करता है?", "Customer हर month ₹1,000 देकर enroll कर सकते हैं. हर month lucky draw होगा और winner को ₹10,500 तक products मिलेंगे, dairy, ghee, atta और sugar छोड़कर. Scheme 10 months चलेगी; अंत में जिन customers को कुछ नहीं मिला उन्हें भी ₹10,500 तक products मिलेंगे. Full terms के लिए store contact करें."]]],
       ["Language & Accessibility", [["क्या website Hindi में use कर सकते हैं?", "हां. Header में Hindi/English toggle use करें."], ["क्या order के बारे में सीधे बात कर सकते हैं?", "हां. Call या WhatsApp button से Kushwaha Store directly contact करें."]]],
@@ -1162,14 +1174,38 @@ function selectedPaymentMode() {
   return document.querySelector('input[name="paymentMode"]:checked')?.value || state.paymentMode || "pay_at_store";
 }
 
+function isUdhaarApproved() {
+  return Boolean(currentCustomer && udhaarRequest?.status === "approved");
+}
+
 function updatePaymentModeLabels() {
   const labels = document.querySelectorAll("#paymentModes label");
-  const values = [t("payAtPickup"), t("upiNow")];
-  labels.forEach((label, index) => {
+  const values = {
+    pay_at_store: t("payAtPickup"),
+    upi_online: t("upiNow"),
+    udhaar: t("addToKhaata")
+  };
+  labels.forEach((label) => {
     const input = label.querySelector("input");
     label.textContent = "";
-    if (input) label.append(input, ` ${values[index]}`);
+    if (input) label.append(input, ` ${values[input.value] || input.value}`);
   });
+}
+
+function renderPaymentModes() {
+  const approved = isUdhaarApproved();
+  const udhaarLabel = $("#udhaarPaymentMode");
+  const udhaarInput = udhaarLabel?.querySelector("input");
+  const help = $("#udhaarPaymentHelp");
+  if (udhaarLabel) udhaarLabel.hidden = !approved;
+  if (udhaarInput) udhaarInput.disabled = !approved;
+  if (!approved && selectedPaymentMode() === "udhaar") {
+    const pickup = document.querySelector('input[name="paymentMode"][value="pay_at_store"]');
+    if (pickup) pickup.checked = true;
+    state.paymentMode = "pay_at_store";
+  }
+  if (help) help.textContent = approved ? t("udhaarPaymentApprovedHelp") : t("udhaarPaymentHelp");
+  updatePaymentModeLabels();
 }
 
 async function refreshPaymentOptions() {
@@ -1716,6 +1752,7 @@ function renderCart() {
   const lines = cartLines();
   const totalQty = lines.length;
   const totals = checkoutTotals(lines);
+  renderPaymentModes();
   $("#cartCount").textContent = totalQty;
   $("#cartTotal").textContent = rupee.format(totals.subtotal);
   $("#cartDiscount").textContent = `-${rupee.format(totals.discount)}`;
@@ -1905,13 +1942,14 @@ function renderAccount() {
   }
   if (udhaarNote) {
     udhaarNote.textContent = udhaarStatus === "approved"
-      ? `${t("udhaarRequestApproved")} ${udhaarRequest?.balance ? `${rupee.format(udhaarRequest.balance)} due.` : ""}`.trim()
+      ? `${t("udhaarRequestApproved")} ${udhaarRequest?.balance ? `${rupee.format(udhaarRequest.balance)} ${t("due")}.` : ""} ${t("udhaarPaymentApprovedHelp")}`.trim()
       : udhaarStatus === "pending"
         ? t("udhaarRequestPending")
         : udhaarStatus === "rejected"
           ? t("udhaarRequestRejected")
           : t("udhaarRequestHelp");
   }
+  renderPaymentModes();
   renderCustomerOrders();
 }
 
@@ -2047,12 +2085,14 @@ async function loadUdhaarRequest() {
   if (!currentCustomer || !backendOnline) {
     udhaarRequest = null;
     renderAccount();
+    renderCart();
     return;
   }
   const payload = await api(`/customers/${encodeURIComponent(currentCustomer.id)}/udhaar-request`);
   saveCustomer(payload.customer || currentCustomer);
   udhaarRequest = payload.application || null;
   renderAccount();
+  renderCart();
 }
 
 async function requestUdhaarAccount() {
@@ -2643,8 +2683,8 @@ function applyLanguage() {
   setTexts(".checkout-box > div:not(.fulfillment-note):not(.upi-box) span", [t("subtotal"), t("storeDiscount"), t("toPay"), t("loyaltyEarned")]);
   setText(".upi-box strong", t("payOnline"));
   setText(".upi-box small", t("paymentCopy"));
-  updatePaymentModeLabels();
-  setText(".receipt-note", t("receiptNote"));
+  renderPaymentModes();
+  setText(".checkout-box > small.receipt-note:last-of-type", t("receiptNote"));
   setText(".fulfillment-note", t("fulfillmentNote"));
   setText("#websiteOrder", t("placeOrder"));
   setText("#whatsappOrder", t("sendWhatsapp"));
@@ -2713,6 +2753,10 @@ async function placeWebsiteOrder() {
     return;
   }
   const paymentMode = selectedPaymentMode();
+  if (paymentMode === "udhaar" && !isUdhaarApproved()) {
+    alert(t("udhaarCheckoutDenied"));
+    return;
+  }
   try {
     const payload = await api("/orders", {
       method: "POST",
@@ -2733,6 +2777,12 @@ async function placeWebsiteOrder() {
     renderOrders();
     renderAccount();
     renderAdminSummary(payload.summary);
+    if (paymentMode === "udhaar") {
+      await loadUdhaarRequest().catch(() => {});
+      await loadCustomerStatement().catch(() => {});
+      alert(`${payload.order.id} placed. ${t("udhaarOrderSuccess")}`);
+      return;
+    }
     if (paymentMode === "upi_online") {
       const options = await api(`/payments/options?amount=${encodeURIComponent(payload.order.total || payload.order.payable || totals.payable)}&orderId=${encodeURIComponent(payload.order.id)}`);
       if (options.upiIntentUrl) window.open(options.upiIntentUrl, "_blank", "noopener,noreferrer");
