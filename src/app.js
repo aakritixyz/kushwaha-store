@@ -404,6 +404,7 @@ const translations = {
     minimumOrderValue: "Minimum online order value is ₹29.",
     orderSuccess: "Stock updated and loyalty points added.",
     feedbackPrompt: "Care to drop a feedback?",
+    blogPrompt: "Also, take a minute to read the story of Kushwaha Store?",
     ordersReady: "orders",
     readyForPickup: "ready for pickup",
     orderedSeed: "ordered in seed data",
@@ -685,6 +686,7 @@ const translations = {
     minimumOrderValue: "Online order की minimum value ₹29 है.",
     orderSuccess: "स्टॉक update हो गया और लॉयल्टी पॉइंट जुड़ गए.",
     feedbackPrompt: "एक feedback देना चाहेंगे?",
+    blogPrompt: "और एक मिनट निकालकर Kushwaha Store की कहानी पढ़ेंगे?",
     ordersReady: "orders",
     readyForPickup: "pickup ready",
     orderedSeed: "seed data में ordered",
@@ -1933,8 +1935,13 @@ function renderReviews() {
 
 function askForFeedback() {
   window.setTimeout(() => {
-    if (!confirm(t("feedbackPrompt"))) return;
-    window.location.href = "/reviews";
+    if (confirm(t("feedbackPrompt"))) {
+      window.location.href = "/reviews";
+      return;
+    }
+    if (confirm(t("blogPrompt"))) {
+      window.location.href = "/blog";
+    }
   }, 250);
 }
 
