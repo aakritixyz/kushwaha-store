@@ -120,6 +120,29 @@ try {
   currentCustomer = null;
 }
 
+if ("scrollRestoration" in history) {
+  history.scrollRestoration = "manual";
+}
+
+const currentPath = () => window.location.pathname.replace(/\/$/, "") || "/";
+const openedAdminDirectlyOnPhone = currentPath() === "/admin"
+  && window.matchMedia("(max-width: 760px)").matches
+  && sessionStorage.getItem("ksAdminNavClick") !== "1";
+if (openedAdminDirectlyOnPhone) {
+  history.replaceState(null, "", "/");
+}
+
+function routeFromPath() {
+  const path = currentPath();
+  if (path === "/admin") return "admin";
+  if (path === "/blog") return "blog";
+  if (path === "/udhaar") return "udhaar";
+  if (path === "/gallery") return "gallery";
+  if (path === "/reviews") return "reviews";
+  if (path === "/contact") return "contact";
+  return "store";
+}
+
 const state = {
   category: "All",
   categoryId: "all",
@@ -130,19 +153,7 @@ const state = {
   cart: new Map(),
   hindi: false,
   paymentMode: "pay_at_store",
-  route: window.location.pathname.replace(/\/$/, "") === "/admin"
-    ? "admin"
-    : window.location.pathname.replace(/\/$/, "") === "/blog"
-      ? "blog"
-      : window.location.pathname.replace(/\/$/, "") === "/udhaar"
-        ? "udhaar"
-        : window.location.pathname.replace(/\/$/, "") === "/gallery"
-          ? "gallery"
-          : window.location.pathname.replace(/\/$/, "") === "/reviews"
-            ? "reviews"
-            : window.location.pathname.replace(/\/$/, "") === "/contact"
-              ? "contact"
-              : "store"
+  route: routeFromPath()
 };
 
 const rupee = new Intl.NumberFormat("en-IN", {
@@ -3289,6 +3300,9 @@ $("#updateProductSelect").addEventListener("change", () => fillUpdateProductForm
 $("#updateProductSearch").addEventListener("input", () => renderAdminCatalogManager());
 $("#adminLoginForm").addEventListener("submit", loginAdmin);
 $("#adminLogout").addEventListener("click", logoutAdmin);
+document.querySelectorAll('a[href="/admin"]').forEach((link) => {
+  link.addEventListener("click", () => sessionStorage.setItem("ksAdminNavClick", "1"));
+});
 $("#ledgerAdjustForm").addEventListener("submit", submitLedgerAdjustment);
 $("#reviewForm").addEventListener("submit", submitReview);
 $("#settleLedgerMonth").addEventListener("click", settleLedgerMonth);
@@ -3349,6 +3363,9 @@ async function boot() {
   renderOrders();
   renderLedger();
   renderReviews();
+  if (state.route === "store" && !window.location.hash) {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }
 }
 
 boot();
