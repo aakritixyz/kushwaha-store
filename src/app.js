@@ -1221,6 +1221,16 @@ function renderPaymentModes() {
   updatePaymentModeLabels();
 }
 
+function highlightPaymentOptions() {
+  const paymentModes = $("#paymentModes");
+  if (!paymentModes) return;
+  paymentModes.scrollIntoView({ behavior: "smooth", block: "center" });
+  paymentModes.classList.remove("payment-attention");
+  void paymentModes.offsetWidth;
+  paymentModes.classList.add("payment-attention");
+  window.setTimeout(() => paymentModes.classList.remove("payment-attention"), 1000);
+}
+
 async function refreshPaymentOptions() {
   if (!backendOnline) return;
   const totals = checkoutTotals(cartLines());
@@ -2772,6 +2782,7 @@ async function placeWebsiteOrder() {
     alert(t("minimumOrderValue"));
     return;
   }
+  highlightPaymentOptions();
   const paymentMode = selectedPaymentMode();
   if (paymentMode === "udhaar" && !isUdhaarApproved()) {
     alert(t("udhaarCheckoutDenied"));
