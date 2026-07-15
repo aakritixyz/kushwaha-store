@@ -1379,6 +1379,26 @@ function categoryById(id) {
   return categories.find((category) => category.id === id);
 }
 
+const categoryCoverImages = {
+  allProducts: "https://imgs.search.brave.com/ScnkFzqB1uj2pwsOIVtgM8xPe4DcSUxB0H5gxUAIW48/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9pbWFn/ZXMucGV4ZWxzLmNv/bS9waG90b3MvNzI2/MjQ2OS9wZXhlbHMt/cGhvdG8tNzI2MjQ2/OS5qcGVnP2NzPXRp/bnlzcmdiJmRwcj0x/Jnc9NTAw",
+  powderedSpices: "https://imgs.search.brave.com/aeM8Tak3Ohne2tEL4MJS93-BqtQsLnwfHKUR9O1QOX4/rs:fit:0:180:1:0/g:ce/aHR0cHM6Ly9tLm1l/ZGlhLWFtYXpvbi5j/b20vaW1hZ2VzL1Mv/YXBsdXMtbWVkaWEt/bGlicmFyeS1zZXJ2/aWNlLW1lZGlhLzFi/MTZlYTUxLWFmNzIt/NDU0Ny1iODZjLWI0/ZTgwZGIyYTEzYy5f/X0NSMCwwLDk3MCwz/MDBfUFQwX1NYOTcw/X1YxX19fLmpwZw",
+  wholeSpices: "https://imgs.search.brave.com/-t-T32QWNALkyYc4JWTbvzZVtjQgMOJ8ZCPU7XU_heU/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9jcGlt/Zy50aXN0YXRpYy5j/b20vMTE3Nzg3NDYv/Yi80L01peC1XaG9s/ZS1TcGljZXMuLndl/YnA",
+  dryFruitsNuts: "https://imgs.search.brave.com/0lH4LgKgCTmpZO4blhGnZFJK9NNXgB6YDUQsAp5mluY/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9pbWcu/bWFnbmlmaWMuY29t/L2ZyZWUtcGhvdG8v/dG9wLXZpZXctZGlm/ZmVyZW50LW51dHMt/d2l0aC1yYWlzaW5z/LWRyaWVkLWZydWl0/cy1ncmV5LWJhY2tn/cm91bmQtbnV0LXNu/YWNrLXJhaXNpbi1k/cnktZnJ1aXQtbnV0/c18xNDA3MjUtNjQ2/MjUuanBnP2dhPUdB/MS4xLjE5ODE2OTk5/ODUuMTc4MjM5Nzk3/NyZzZW10PWFpc19o/eWJyaWQmdz03NDAm/cT04MA",
+  rice: "https://imgs.search.brave.com/pLlKcw-X0ndkkTqOkZtZjuBS1xu87mBfgDJ57QLDOZE/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9zdGF0/aWMudmVjdGVlenku/Y29tL3N5c3RlbS9y/ZXNvdXJjZXMvdGh1/bWJuYWlscy8wNTEv/MTQyLzU3OS9zbWFs/bC9pbmRpYW4tY3Vp/c2luZS1zdGVhbWVk/LWJhc21hdGktcmlj/ZS1waG90by5qcGc",
+  attaMaidaSoojiBesan: "https://imgs.search.brave.com/YeT1nYf-S70SmyedAH3GnZc1UfZcTuM4WyEvt7jR1cQ/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly90d29i/cm90aGVyc2Zvb2Qu/Y29tL2Nkbi9zaG9w/L2FydGljbGVzL0Rl/c2lnbl8zLnBuZz92/PTE3ODIzMDY0Mzcm/d2lkdGg9MTUwMA",
+  dals: "https://imgs.search.brave.com/VGKppCQpOICj9oqxxuP2FhM_sPJOJvzVLW9T536U4tE/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9vb29m/YXJtcy5jb20vY2Ru/L3Nob3AvZmlsZXMv/T09PX0Zhcm1zX0Rh/bF9XaG9sZV9HcmFp/bi5qcGc_dj0xNzI3/MTAwODk2JndpZHRo/PTE1MDA",
+  oilGhee: "https://imgs.search.brave.com/OX5jKsyvk5L1nktO_8tucUzVHVb92krAjdNhjqcr31o/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9jZG4u/c2hvcGlmeS5jb20v/cy9maWxlcy8xLzA1/NjYvNjIyNi8xODk3/L2ZpbGVzL0doZWVf/YW5kX29pbF9wcmVw/YXJhdGlvbl90ZWNo/bmlxdWVzXzQ4MHg0/ODAuanBnP3Y9MTY4/MjY1NTMwMw",
+  sugarJaggery: "https://imgs.search.brave.com/fHCdHkbl0nBazKf_wOMr6jRP-v5vLDLWbS7rmCKTYH8/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9pMC53/cC5jb20vYmxvZy50/aGVheXVydmVkYWV4/cGVyaWVuY2UuY29t/L3dwLWNvbnRlbnQv/dXBsb2Fkcy8yMDIz/LzA4L0phZ2dlcnl2/c1N1Z2FyLndlYnA_/Zml0PTEyMDAsNTUw/JnNzbD0x",
+  salt: "https://imgs.search.brave.com/Vs1g13aVWSkb5sFlA8vfg92LCBkLDXXmXHFU8z5bKfo/rs:fit:0:180:1:0/g:ce/aHR0cHM6Ly93d3cu/dGF0YS5jb20vY29u/dGVudC9kYW0vdGF0/YS9pbWFnZXMvYnJh/bmRzL2Rlc2t0b3Av/dGF0YV9zYWx0X29j/dDIwMjFfYnJhbmRz/X3RodW1ibmFpbF9k/ZXNrdG9wXzI2NXgx/NzUuanBn",
+  coldDrinksJuices: "https://imgs.search.brave.com/5QHWLc_eeXOMWrxHbtsjHXlUjWWf5WbOQxjD6SwqPIM/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9tZWRp/YS5nZXR0eWltYWdl/cy5jb20vaWQvNDc3/NTY3NTUwL3Bob3Rv/L2ljZS1jb2xkLWJl/dmVyYWdlcy5qcGc_/cz02MTJ4NjEyJnc9/MCZrPTIwJmM9dFB3/VHpvM250Yi1vVU1j/VVFNZWlVTDVvM1Qw/OVRxWndYYnc2TWNX/V1NIbz0",
+  water: "https://imgs.search.brave.com/5mVZh_ckEjcAQ6GNCN-WN_sVdhtl1h6qrTgNPII7PSg/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly81Lmlt/aW1nLmNvbS9kYXRh/NS9TRUxMRVIvRGVm/YXVsdC8yMDI1LzEw/LzU1MTY1MjgyNS9X/TS9GWi9HSi8zNTA3/NDI4L2Jpc2xlcmkt/d2F0ZXItYm90dGxl/cy01MDAtbWwtNTAw/eDUwMC5qcGc",
+  teaCoffee: "https://imgs.search.brave.com/pqlLMPH41yeIHNvkQbJiUt6ZfzilNiuSp62Z_ct56ks/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9zdGF0/aWMudmVjdGVlenku/Y29tL3N5c3RlbS9y/ZXNvdXJjZXMvdGh1/bWJuYWlscy8wMzAv/MDc4LzU2Mi9zbWFs/bC9hLWN1cC1vZi10/ZWEtYW5kLWEtY3Vw/LW9mLWNvZmZlZS1v/bi1hLXdvb2Rlbi10/YWJsZS1haS1nZW5l/cmF0ZWQtZnJlZS1w/aG90by5qcGc",
+  healthDrinks: "https://imgs.search.brave.com/ssfb4olWQTzWn9ukvs1tphP7EKz7aZ0uAOxKmJ9UATA/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9hc3Nl/dHMudXBzdG94LmNv/bS9jb250ZW50L2Fz/c2V0cy9pbWFnZXMv/Y21zLzIwMjQ0MjUv/SG9ybGlja3Mud2Vi/cA",
+  biscuits: "https://imgs.search.brave.com/QJ9NkzgQPqCuuxi1Bt4iSLeXyMdby_FGwm_nxQAkRp4/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly90My5m/dGNkbi5uZXQvanBn/LzAzLzgxLzkxLzAw/LzM2MF9GXzM4MTkx/MDA3MF9Vb3ZBSnJv/aGY4b1RnQ2lRb2dt/a2dqR05wdFRPYmxT/di5qcGc",
+  noodlesPasta: "https://imgs.search.brave.com/RuWCVPyLNPTr0_FLvzHmhzefNQIoWtIw9GKleoXXbco/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9zdGF0/aWMudmVjdGVlenku/Y29tL3N5c3RlbS9y/ZXNvdXJjZXMvdGh1/bWJuYWlscy8wNTIv/NTQxLzExNC9zbWFs/bC9wYXN0YS1ub29k/bGVzLWZvci1jb29r/aW5nLWl0YWxpYW4t/Zm9vZC1waG90by5q/cGc",
+  chocolates: "https://imgs.search.brave.com/rgUwrAUjHdu1Um63OsQXoU7qZ7skz7CT88j3o7NEVd0/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9pLnBp/bmltZy5jb20vb3Jp/Z2luYWxzLzc2L2I4/L2U0Lzc2YjhlNDg0/NWQyMzkxNjBlMjhi/YTIxOGRkZTQ4YTU3/LmpwZw"
+};
+
 function categoryTileImage(tile) {
   if (tile.imageUrl) return tile.imageUrl;
   const hints = (tile.imageHints || [tile.imageHint || tile.label]).map((hint) => String(hint || "").toLowerCase());
@@ -1397,43 +1417,43 @@ function categorySections() {
     {
       title: hi ? "जल्दी ब्राउज़ करें" : "Quick Browse",
       tiles: [
-        { label: hi ? "सारे Products" : "All Products", categoryId: "all", imageUrl: "https://placehold.co/420x260/fff3d5/111d4a/png?text=All+Products", filter: "" }
+        { label: hi ? "सारे Products" : "All Products", categoryId: "all", imageUrl: categoryCoverImages.allProducts, filter: "" }
       ]
     },
     {
       title: hi ? "मसाले और ड्राई फ्रूट्स" : "Spices & Dry Fruits",
       tiles: [
-        { label: hi ? "Powdered Spices" : "Powdered Spices", categoryId: "cat-masale", imageHints: ["haldi", "mirch", "powder"], filter: "haldi|mirch|dhaniya|garam|powder|masala" },
-        { label: hi ? "Whole Spices" : "Whole Spices", categoryId: "cat-masale", imageHints: ["jeera", "sabut"], filter: "jeera|sabut|whole|laung|elaichi|kali mirch|dalchini" },
-        { label: hi ? "Dry Fruits & Nuts" : "Dry Fruits & Nuts", categoryId: "cat-festival", imageUrl: "https://commons.wikimedia.org/wiki/Special:FilePath/Mixed_nuts.jpg", filter: "dry fruit|almond|badam|kaju|cashew|kishmish|raisin|pista|nuts" }
+        { label: hi ? "Powdered Spices" : "Powdered Spices", categoryId: "cat-masale", imageUrl: categoryCoverImages.powderedSpices, filter: "haldi|mirch|dhaniya|garam|powder|masala" },
+        { label: hi ? "Whole Spices" : "Whole Spices", categoryId: "cat-masale", imageUrl: categoryCoverImages.wholeSpices, filter: "jeera|sabut|whole|laung|elaichi|kali mirch|dalchini" },
+        { label: hi ? "Dry Fruits & Nuts" : "Dry Fruits & Nuts", categoryId: "cat-festival", imageUrl: categoryCoverImages.dryFruitsNuts, filter: "dry fruit|almond|badam|kaju|cashew|kishmish|raisin|pista|nuts" }
       ]
     },
     {
       title: hi ? "अनाज, आटा और दाल" : "Cereals, Atta & Dals",
       tiles: [
-        { label: hi ? "Rice" : "Rice", categoryId: "cat-atta-daal-chawal", imageHints: ["chawal", "rice"], filter: "chawal|rice|mogra|dubar|rozana|classic|tibar|sella|basmati|parmal" },
-        { label: hi ? "Atta, Maida, Sooji & Besan" : "Atta, Maida, Sooji & Besan", categoryId: "cat-atta-maida-sooji-besan", imageHint: "aashirvaad" },
-        { label: hi ? "Dals" : "Dals", categoryId: "cat-atta-daal-chawal", imageHints: ["masoor", "arhar", "daal"], filter: "daal|dal|masoor|arhar|chana|moong|urhad|rajma|lobia" }
+        { label: hi ? "Rice" : "Rice", categoryId: "cat-atta-daal-chawal", imageUrl: categoryCoverImages.rice, filter: "chawal|rice|mogra|dubar|rozana|classic|tibar|sella|basmati|parmal" },
+        { label: hi ? "Atta, Maida, Sooji & Besan" : "Atta, Maida, Sooji & Besan", categoryId: "cat-atta-maida-sooji-besan", imageUrl: categoryCoverImages.attaMaidaSoojiBesan },
+        { label: hi ? "Dals" : "Dals", categoryId: "cat-atta-daal-chawal", imageUrl: categoryCoverImages.dals, filter: "daal|dal|masoor|arhar|chana|moong|urhad|rajma|lobia" }
       ]
     },
     {
       title: hi ? "तेल, चीनी और नमक" : "Oil, Sugar & Salt",
       tiles: [
-        { label: hi ? "Oil & Ghee" : "Oil & Ghee", categoryId: "cat-tel-ghee", imageHints: ["fortune", "oil"] },
-        { label: hi ? "Sugar & Jaggery" : "Sugar & Jaggery", categoryId: "cat-cheeni-bura-khand", imageHints: ["cheeni", "gud"] },
-        { label: hi ? "Salt" : "Salt", categoryId: "cat-basics", imageHint: "namak", filter: "namak|salt" }
+        { label: hi ? "Oil & Ghee" : "Oil & Ghee", categoryId: "cat-tel-ghee", imageUrl: categoryCoverImages.oilGhee },
+        { label: hi ? "Sugar & Jaggery" : "Sugar & Jaggery", categoryId: "cat-cheeni-bura-khand", imageUrl: categoryCoverImages.sugarJaggery },
+        { label: hi ? "Salt" : "Salt", categoryId: "cat-basics", imageUrl: categoryCoverImages.salt, filter: "namak|salt" }
       ]
     },
     {
       title: hi ? "नाश्ता और पेय" : "Snacks & Beverages",
       tiles: [
-        { label: hi ? "Cold Drinks & Juices" : "Cold Drinks & Juices", categoryId: "cat-cold-drinks", imageHint: "coca cola", filter: "coca|limca|thums|sprite|fanta|pepsi|mirinda|mountain dew|frooti|juice|sting|hell|red bull|lahori|nimbooz|arora" },
-        { label: hi ? "Water" : "Water", categoryId: "cat-cold-drinks", imageHints: ["bisleri", "water"], filter: "water|bisleri|avoca" },
-        { label: hi ? "Tea & Coffee" : "Tea & Coffee", categoryId: "cat-chai-patti", imageHints: ["tata", "today"], filter: "tea|chai|coffee|tata|today|red label|taj|taaza|lipton" },
-        { label: hi ? "Health Drinks & Premixes" : "Health Drinks & Premixes", categoryId: "cat-nashta", imageUrl: "https://placehold.co/420x260/fff3d5/111d4a/png?text=Health+Drinks", filter: "health|boost|horlicks|bournvita|complan|premix|ors" },
-        { label: hi ? "Biscuits" : "Biscuits", categoryId: "cat-biscuits-namkeen", imageHints: ["biscuit", "parle"], filter: "biscuit|cookie|parle|marie|cream" },
-        { label: hi ? "Noodles & Pasta" : "Noodles & Pasta", categoryId: "cat-nashta", imageUrl: "https://placehold.co/420x260/fff3d5/111d4a/png?text=Noodles+%26+Pasta", filter: "noodle|noodles|pasta|maggi|yippee" },
-        { label: hi ? "Chocolates & Candies" : "Chocolates & Candies", categoryId: "cat-nashta", imageUrl: "https://placehold.co/420x260/fff3d5/111d4a/png?text=Chocolates", filter: "chocolate|candy|toffee|eclair|dairy milk|munch|kitkat" }
+        { label: hi ? "Cold Drinks & Juices" : "Cold Drinks & Juices", categoryId: "cat-cold-drinks", imageUrl: categoryCoverImages.coldDrinksJuices, filter: "coca|limca|thums|sprite|fanta|pepsi|mirinda|mountain dew|frooti|juice|sting|hell|red bull|lahori|nimbooz|arora" },
+        { label: hi ? "Water" : "Water", categoryId: "cat-cold-drinks", imageUrl: categoryCoverImages.water, filter: "water|bisleri|avoca" },
+        { label: hi ? "Tea & Coffee" : "Tea & Coffee", categoryId: "cat-chai-patti", imageUrl: categoryCoverImages.teaCoffee, filter: "tea|chai|coffee|tata|today|red label|taj|taaza|lipton" },
+        { label: hi ? "Health Drinks & Premixes" : "Health Drinks & Premixes", categoryId: "cat-nashta", imageUrl: categoryCoverImages.healthDrinks, filter: "health|boost|horlicks|bournvita|complan|premix|ors" },
+        { label: hi ? "Biscuits" : "Biscuits", categoryId: "cat-biscuits-namkeen", imageUrl: categoryCoverImages.biscuits, filter: "biscuit|cookie|parle|marie|cream" },
+        { label: hi ? "Noodles & Pasta" : "Noodles & Pasta", categoryId: "cat-nashta", imageUrl: categoryCoverImages.noodlesPasta, filter: "noodle|noodles|pasta|maggi|yippee" },
+        { label: hi ? "Chocolates & Candies" : "Chocolates & Candies", categoryId: "cat-nashta", imageUrl: categoryCoverImages.chocolates, filter: "chocolate|candy|toffee|eclair|dairy milk|munch|kitkat" }
       ]
     },
     {
