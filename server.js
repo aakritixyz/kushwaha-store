@@ -49,6 +49,10 @@ const MIN_ORDER_VALUE = Number(process.env.MIN_ORDER_VALUE || 29);
 let supabaseDbCache = null;
 let supabaseDbCacheAt = 0;
 let supabaseDbReadPromise = null;
+let supabasePublicCache = null;
+let supabasePublicCacheAt = 0;
+let supabaseAdminOrdersCache = null;
+let supabaseAdminOrdersCacheAt = 0;
 
 // Initialize Supabase clients
 const supabaseAdmin = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY 
@@ -457,6 +461,148 @@ async function loadSupabaseDb() {
   return db;
 }
 
+function categoryRowsToCategories(rows) {
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    sort: row.sort_order
+  }));
+}
+
+function productRowsToProducts(rows, seed) {
+  const seedProductById = new Map((seed.products || []).map((product) => [product.id, product]));
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    categoryId: row.category_id || seedProductById.get(row.id)?.categoryId || null,
+    unit: row.unit,
+    price: Number(row.price || 0),
+    mrp: Number(row.mrp || seedProductById.get(row.id)?.mrp || 0),
+    stock: Number(row.stock || 0),
+    lowStockAt: Number(row.low_stock_at || 0),
+    mark: row.mark,
+    loose: Boolean(row.loose),
+    imageUrl: row.image_url || undefined,
+    sourceNote: row.source_note || undefined
+  }));
+}
+
+function orderRowsToOrders(orderRows, orderItemRows) {
+  return orderRows.map((row) => ({
+    id: row.id,
+    customerId: row.customer_id,
+    name: row.name,
+    phone: row.phone,
+    subtotal: Number(row.subtotal || 0),
+    discount: Number(row.discount || 0),
+    payable: Number(row.payable || row.total || 0),
+    total: Number(row.total || row.payable || 0),
+    loyaltyEarned: Number(row.loyalty_earned || 0),
+    paymentMode: row.payment_mode,
+    paymentStatus: row.payment_status,
+    fulfillment: row.fulfillment,
+    status: row.status,
+    receiptId: row.receipt_id,
+    timeline: row.timeline || [],
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    items: orderItemRows
+      .filter((item) => item.order_id === row.id)
+      .map((item) => ({
+        id: item.id,
+        productId: item.product_id,
+        qty: Number(item.qty || 0),
+        price: Number(item.price || 0)
+      }))
+  }));
+}
+
+async function readPublicSupabaseDb() {
+  if (!SUPABASE_ENABLED) return readDb();
+  if (supabasePublicCache && Date.now() - supabasePublicCacheAt < SUPABASE_CACHE_MS) {
+    return structuredClone(supabasePublicCache);
+  }
+
+  const seed = await readSeedDb();
+  const [settingsRows, categoryRows, productRows] = await Promise.all([
+    selectAll("store_settings"),
+    selectAll("categories", "sort_order.asc"),
+    selectAll("products", "name.asc")
+  ]);
+  const mainSettings = settingsRows[0] || {};
+  const db = {
+    store: mainSettings.store || seed.store,
+    settings: { ...(seed.settings || {}), ...(mainSettings.settings || {}) },
+    categories: categoryRows.length ? categoryRowsToCategories(categoryRows) : (seed.categories || []),
+    products: productRows.length ? productRowsToProducts(productRows, seed) : (seed.products || []),
+    customers: [],
+    orders: [],
+    receipts: [],
+    payments: [],
+    ledger: [],
+    rewards: {
+      clubName: mainSettings.rewards?.clubName || seed.rewards?.clubName || "Community Rewards Club",
+      positioning: mainSettings.rewards?.positioning || seed.rewards?.positioning || "",
+      applications: [],
+      draws: []
+    },
+    blogPosts: seed.blogPosts || [],
+    reviews: seed.reviews || []
+  };
+  migrateDb(db);
+  supabasePublicCache = structuredClone(db);
+  supabasePublicCacheAt = Date.now();
+  return structuredClone(db);
+}
+
+async function readAdminOrdersSupabaseDb() {
+  if (!SUPABASE_ENABLED) return readDb();
+  if (supabaseAdminOrdersCache && Date.now() - supabaseAdminOrdersCacheAt < SUPABASE_CACHE_MS) {
+    return structuredClone(supabaseAdminOrdersCache);
+  }
+
+  const seed = await readSeedDb();
+  const [settingsRows, categoryRows, productRows, orderRows, orderItemRows, ledgerRows] = await Promise.all([
+    selectAll("store_settings"),
+    selectAll("categories", "sort_order.asc"),
+    selectAll("products", "name.asc"),
+    selectAll("orders", "created_at.desc"),
+    selectAll("order_items", "id.asc"),
+    selectAll("ledger_accounts", "name.asc")
+  ]);
+  const mainSettings = settingsRows[0] || {};
+  const db = {
+    store: mainSettings.store || seed.store,
+    settings: { ...(seed.settings || {}), ...(mainSettings.settings || {}) },
+    categories: categoryRows.length ? categoryRowsToCategories(categoryRows) : (seed.categories || []),
+    products: productRows.length ? productRowsToProducts(productRows, seed) : (seed.products || []),
+    customers: [],
+    orders: orderRowsToOrders(orderRows, orderItemRows),
+    receipts: [],
+    payments: [],
+    ledger: ledgerRows.map((row) => ({
+      id: row.id,
+      customerId: row.customer_id,
+      phone: row.phone,
+      name: row.name,
+      balance: Number(row.balance || 0),
+      entries: []
+    })),
+    rewards: {
+      clubName: mainSettings.rewards?.clubName || seed.rewards?.clubName || "Community Rewards Club",
+      positioning: mainSettings.rewards?.positioning || seed.rewards?.positioning || "",
+      applications: [],
+      draws: []
+    },
+    blogPosts: [],
+    reviews: []
+  };
+  migrateDb(db);
+  supabaseAdminOrdersCache = structuredClone(db);
+  supabaseAdminOrdersCacheAt = Date.now();
+  return structuredClone(db);
+}
+
 async function writeSupabaseDb(db) {
   const writeTime = nowIso();
   const previousDb = supabaseDbCache;
@@ -760,6 +906,8 @@ async function writeSupabaseDb(db) {
 
   supabaseDbCache = structuredClone(db);
   supabaseDbCacheAt = Date.now();
+  supabasePublicCache = null;
+  supabaseAdminOrdersCache = null;
 }
 
 function sendJson(res, status, payload) {
@@ -1666,6 +1814,69 @@ async function handleApi(req, res, url) {
     } catch (error) {
       return unauthorized(res, error.message);
     }
+  }
+
+  if (method === "GET" && url.pathname === "/api/bootstrap") {
+    const db = await readPublicSupabaseDb();
+    return sendJson(res, 200, {
+      store: db.store,
+      settings: db.settings,
+      categories: [{ id: "all", name: "All", sort: 0 }, ...db.categories].sort((a, b) => a.sort - b.sort),
+      products: db.products.map((product) => publicProduct(db, product)),
+      orders: [],
+      ledger: [],
+      summary: null,
+      rewards: db.rewards,
+      reviews: (db.reviews || []).filter((review) => review.published !== false).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))),
+      payments: [],
+      receipts: []
+    });
+  }
+
+  if (method === "GET" && url.pathname === "/api/payments/options") {
+    const db = await readPublicSupabaseDb();
+    const amount = Number(url.searchParams.get("amount") || 0);
+    const orderId = url.searchParams.get("orderId") || "";
+    const settings = paymentSettings(db);
+    const intentUrl = upiIntentUrl({ vpa: settings.upiVpa, name: settings.upiName, amount, orderId });
+    return sendJson(res, 200, {
+      ...settings,
+      upiIntentUrl: intentUrl,
+      upiQrUrl: settings.upiStaticQrUrl || upiQrUrl(intentUrl),
+      generatedUpiQrUrl: upiQrUrl(intentUrl)
+    });
+  }
+
+  if (method === "GET" && url.pathname === "/api/categories") {
+    const db = await readPublicSupabaseDb();
+    return sendJson(res, 200, [{ id: "all", name: "All", sort: 0 }, ...db.categories].sort((a, b) => a.sort - b.sort));
+  }
+
+  if (method === "GET" && url.pathname === "/api/products") {
+    const db = await readPublicSupabaseDb();
+    const search = String(url.searchParams.get("search") || "").toLowerCase();
+    const category = String(url.searchParams.get("category") || "all");
+    const stock = String(url.searchParams.get("stock") || "all");
+    const products = db.products
+      .map((product) => publicProduct(db, product))
+      .filter((product) => {
+        const matchesSearch = !search || product.name.toLowerCase().includes(search) || product.category.toLowerCase().includes(search);
+        const matchesCategory = category === "all" || category === "All" || product.categoryId === category || product.category === category;
+        const matchesStock = stock === "all" || product.stockStatus === stock;
+        return matchesSearch && matchesCategory && matchesStock;
+      });
+    return sendJson(res, 200, products);
+  }
+
+  if (method === "GET" && url.pathname === "/api/admin/orders") {
+    if (!requireAdmin(req, res)) return;
+    const db = await readAdminOrdersSupabaseDb();
+    const status = url.searchParams.get("status");
+    const orders = db.orders
+      .filter((order) => !status || order.status === status)
+      .map((order) => publicOrder(db, order))
+      .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+    return sendJson(res, 200, { orders, summary: computeSummary(db) });
   }
 
   const db = await readDb();
