@@ -1106,6 +1106,36 @@ function isPlaceholderImage(url) {
   return /placehold\.co/i.test(String(url || ""));
 }
 
+function productFallbackImage(product) {
+  const categoryId = product?.categoryId || "";
+  const subgroup = productSubgroup(product);
+  if (/tooth|personal care/i.test(subgroup)) return categoryCoverImages.toothpaste;
+  if (/soap|handwash/i.test(subgroup)) return categoryCoverImages.soapsHandwash;
+  if (/shampoo/i.test(subgroup)) return categoryCoverImages.shampooConditioner;
+  if (/dals/i.test(subgroup)) return categoryCoverImages.dals;
+  if (/rice/i.test(subgroup)) return categoryCoverImages.rice;
+  if (/cold drink|juice/i.test(subgroup)) return categoryCoverImages.coldDrinksJuices;
+  if (/water/i.test(subgroup)) return categoryCoverImages.water;
+  if (/tea|coffee/i.test(subgroup)) return categoryCoverImages.teaCoffee;
+  if (/biscuit/i.test(subgroup)) return categoryCoverImages.biscuits;
+  if (/noodle|pasta/i.test(subgroup)) return categoryCoverImages.noodlesPasta;
+  if (/chocolate|candy/i.test(subgroup)) return categoryCoverImages.chocolates;
+  if (/laundry|dishwash|cleaner|freshener|mosquito|pest/i.test(subgroup)) return categoryCoverImages.homeCare;
+  if (categoryId === "cat-masale") return categoryCoverImages.powderedSpices;
+  if (categoryId === "cat-tel-ghee") return categoryCoverImages.oilGhee;
+  if (categoryId === "cat-cheeni-bura-khand") return categoryCoverImages.sugarJaggery;
+  if (categoryId === "cat-basics") return categoryCoverImages.salt;
+  if (categoryId === "cat-chai-patti") return categoryCoverImages.teaCoffee;
+  if (categoryId === "cat-nashta") return categoryCoverImages.healthDrinks;
+  if (categoryId === "cat-biscuits-namkeen") return categoryCoverImages.biscuits;
+  if (categoryId === "cat-saaf-safai") return categoryCoverImages.homeCare;
+  if (categoryId === "cat-personal-care") return categoryCoverImages.soapsHandwash;
+  if (categoryId === "cat-pooja") return categoryCoverImages.pooja;
+  if (categoryId === "cat-cold-drinks") return categoryCoverImages.coldDrinksJuices;
+  if (categoryId === "cat-doodh-dairy") return categoryCoverImages.dairy;
+  return "./assets/kirana-hero.png";
+}
+
 function getCachedImageUrl(product) {
   if (imageCache.has(product.id)) {
     return imageCache.get(product.id);
@@ -1116,9 +1146,9 @@ function getCachedImageUrl(product) {
 }
 
 function catalogImageUrl(product) {
-  if (brokenProductImages.has(product.id)) return "";
+  if (brokenProductImages.has(product.id)) return productFallbackImage(product);
   const url = getCachedImageUrl(product);
-  return isPlaceholderImage(url) ? "" : url;
+  return isPlaceholderImage(url) ? productFallbackImage(product) : url;
 }
 
 function unitMeta(product) {
@@ -1442,7 +1472,10 @@ const categoryCoverImages = {
   chocolates: "https://imgs.search.brave.com/rgUwrAUjHdu1Um63OsQXoU7qZ7skz7CT88j3o7NEVd0/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9pLnBp/bmltZy5jb20vb3Jp/Z2luYWxzLzc2L2I4/L2U0Lzc2YjhlNDg0/NWQyMzkxNjBlMjhi/YTIxOGRkZTQ4YTU3/LmpwZw",
   shampooConditioner: "https://imgs.search.brave.com/j0VsXWDqi42jM_2piG87A5TjpmniWMdFSzEee3RQIdA/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly90aHVt/YnMuZHJlYW1zdGlt/ZS5jb20vYi92YXJp/b3VzLWJyYW5kcy1z/aGFtcG9vLXByb2R1/Y3RzLXNoZWxmLXN0/b3JlLXN1cGVybWFy/a2V0LWt1YWxhLWx1/bXB1ci1tYWxheXNp/YS1mZWJydWFyeS1o/YWlyLWNhcmUtcHJv/ZHVjdC0yNDA3Nzgx/NjMuanBn",
   soapsHandwash: "https://imgs.search.brave.com/Mxtuqa-2CR18MflIU3Xj7D5y1bwA3rQT_x6XP58pm7E/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9jcGlt/Zy50aXN0YXRpYy5j/b20vMTAzOTQ2MDAv/Yi80L0RldHRvbC1I/YW5kd2FzaC1Gb2Ft/LVNvYXAtUG91Y2gt/MjAwbWwuanBn",
-  toothpaste: "https://imgs.search.brave.com/UN5PrxkrSwAb_j7nVfYn-Ve_j3vvi6_2qz4SSK4b3-A/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9pbWcu/eW91dHViZS5jb20v/dmkvMC1DOXFwaTV5/QVEvaHFkZWZhdWx0/LmpwZw"
+  toothpaste: "https://imgs.search.brave.com/UN5PrxkrSwAb_j7nVfYn-Ve_j3vvi6_2qz4SSK4b3-A/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9pbWcu/eW91dHViZS5jb20v/dmkvMC1DOXFwaTV5/QVEvaHFkZWZhdWx0/LmpwZw",
+  homeCare: "https://imgs.search.brave.com/0qptU7Qz1Z6FTfwlWyTKdlERK2LgYdSBzoKuRrI9vKw/rs:fit:0:180:1:0/g:ce/aHR0cHM6Ly9tLm1l/ZGlhLWFtYXpvbi5j/b20vaW1hZ2VzL1Mv/YXBsdXMtbWVkaWEt/bGlicmFyeS1zZXJ2/aWNlLW1lZGlhLzM4/ZDdkMmVjLWM1NGYt/NDBiZC1hMTYzLWYx/YWQzNDc1M2RhYi5f/X0NSMCwwLDk3MCwz/MDBfUFQwX1NYOTcw/X1YxX19fLmpwZw",
+  pooja: "https://commons.wikimedia.org/wiki/Special:FilePath/Incense_sticks.jpg",
+  dairy: "https://commons.wikimedia.org/wiki/Special:FilePath/Milk_glass.jpg"
 };
 
 function categoryTileImage(tile) {
@@ -1813,7 +1846,7 @@ function renderProducts() {
     visibleProducts = filteredProducts();
     state.categoryFilter = previousFilter;
   }
-  const visible = productEntries(visibleProducts.filter((product) => catalogImageUrl(product)));
+  const visible = productEntries(visibleProducts);
   $("#productGrid").innerHTML = visible.map((entry) => {
     const isVariant = entry.type === "variant";
     const product = entry.product;
@@ -1825,7 +1858,7 @@ function renderProducts() {
     return `
       <article class="product-card">
         <div class="product-art">
-          <img src="${imageUrl}" alt="${product.name}" loading="lazy" data-product-img="${product.id}" />
+          <img src="${imageUrl}" alt="${product.name}" loading="lazy" data-product-img="${product.id}" data-fallback-src="${productFallbackImage(product)}" />
         </div>
         <h3>${isVariant ? entry.brand : product.name}</h3>
         ${subgroup ? `<span class="subgroup-chip">${subgroup}</span>` : ""}
@@ -3580,8 +3613,13 @@ document.addEventListener("click", (event) => {
 document.addEventListener("error", (event) => {
   const image = event.target?.closest?.("[data-product-img]");
   if (!image) return;
+  if (image.dataset.fallbackApplied === "1") {
+    image.src = "./assets/kirana-hero.png";
+    return;
+  }
+  image.dataset.fallbackApplied = "1";
   brokenProductImages.add(image.dataset.productImg);
-  image.closest(".product-card")?.remove();
+  image.src = image.dataset.fallbackSrc || "./assets/kirana-hero.png";
 }, true);
 
 document.addEventListener("change", (event) => {
