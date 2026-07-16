@@ -2844,6 +2844,7 @@ function applyRoute() {
   if (blogStory && infoSection && blogStory.nextElementSibling !== infoSection) {
     infoSection.before(blogStory);
   }
+  document.documentElement.dataset.route = state.route;
   document.body.classList.toggle("admin-page", state.route === "admin");
   document.body.classList.toggle("blog-page", state.route === "blog");
   document.body.classList.toggle("udhaar-page", state.route === "udhaar");

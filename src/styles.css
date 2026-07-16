@@ -34,15 +34,29 @@ button { cursor: pointer; }
 
 .app-shell { min-height: 100vh; padding-bottom: 74px; }
 
+html[data-route="store"] #admin,
+html[data-route="store"] #udhaar,
+html[data-route="store"] #galleryPage,
+html[data-route="store"] #reviewsPage,
+html[data-route="store"] #contactPage,
+html[data-route="store"] #blogStory,
 body.store-page #admin,
 body.store-page #udhaar,
 body.store-page #galleryPage,
-body.store-page #contactPage { display: none; }
+body.store-page #reviewsPage,
+body.store-page #contactPage,
+body.store-page #blogStory { display: none; }
+html[data-route="admin"] main > section:not(#admin),
 body.admin-page main > section:not(#admin) { display: none; }
+html[data-route="blog"] main > section:not(#blogStory),
 body.blog-page main > section:not(#blogStory) { display: none; }
+html[data-route="udhaar"] main > section:not(#udhaar),
 body.udhaar-page main > section:not(#udhaar) { display: none; }
+html[data-route="gallery"] main > section:not(#galleryPage),
 body.gallery-page main > section:not(#galleryPage) { display: none; }
+html[data-route="reviews"] main > section:not(#reviewsPage),
 body.reviews-page main > section:not(#reviewsPage) { display: none; }
+html[data-route="contact"] main > section:not(#contactPage),
 body.contact-page main > section:not(#contactPage) { display: none; }
 body.admin-page #openAccount,
 body.admin-page #openCart { display: none; }
@@ -57,6 +71,7 @@ body.gallery-page .desktop-nav a[href="/gallery"] { color: var(--yellow); }
 body.reviews-page .desktop-nav a[href="/reviews"] { color: var(--yellow); }
 body.contact-page .bottom-nav a[href="/contact"],
 body.contact-page .desktop-nav a[href="/contact"] { color: var(--yellow); }
+html[data-route="blog"] .bottom-nav,
 body.blog-page .bottom-nav { display: none; }
 
 .topbar {

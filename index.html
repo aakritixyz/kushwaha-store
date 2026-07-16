@@ -4,6 +4,31 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Kushwaha Store | Kinare Ka Kirana</title>
+    <script>
+      (() => {
+        const currentPath = () => window.location.pathname.replace(/\/$/, "") || "/";
+        let path = currentPath();
+        try {
+          const openedAdminDirectlyOnPhone = path === "/admin"
+            && window.matchMedia("(max-width: 760px)").matches
+            && sessionStorage.getItem("ksAdminNavClick") !== "1";
+          if (openedAdminDirectlyOnPhone) {
+            history.replaceState(null, "", "/");
+            path = "/";
+          }
+        } catch (error) {
+          path = currentPath();
+        }
+        const route = path === "/admin" ? "admin"
+          : path === "/blog" ? "blog"
+          : path === "/udhaar" ? "udhaar"
+          : path === "/gallery" ? "gallery"
+          : path === "/reviews" ? "reviews"
+          : path === "/contact" ? "contact"
+          : "store";
+        document.documentElement.dataset.route = route;
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
