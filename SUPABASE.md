@@ -19,6 +19,14 @@ supabase/schema.sql
 
 This creates tables for store settings, categories, products, customers, orders, order items, receipts, payments, udhaar ledger, rewards, and blog posts.
 
+To add the starter supermarket-style catalog batch, run this after the schema:
+
+```text
+supabase/dmart_style_starter_catalog.sql
+```
+
+These starter prices and MRPs are estimates for launch testing. Update the final selling price, stock, and image from the admin panel before relying on them publicly.
+
 ## 3. Add Environment
 
 Create `.env` locally using `.env.example`:
