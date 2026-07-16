@@ -355,6 +355,30 @@
               <strong>Printable</strong>
               <small>Download/share via WhatsApp placeholder</small>
             </article>
+            <article class="admin-card new-order-card" id="newOrderCard">
+              <span class="card-icon">NEW</span>
+              <h3>New Orders</h3>
+              <strong id="newOrderCount">0 waiting</strong>
+              <small>Placed orders need packing action</small>
+            </article>
+          </div>
+          <div class="admin-list launch-checklist">
+            <div class="admin-list-head">
+              <div>
+                <h3>Go-live checklist</h3>
+                <small>Run these once before sharing the website publicly.</small>
+              </div>
+            </div>
+            <div class="launch-check-grid">
+              <label><input type="checkbox" data-launch-check="customer" /> Test one customer login/order</label>
+              <label><input type="checkbox" data-launch-check="status" /> Mark order Being Packed → Ready → Completed</label>
+              <label><input type="checkbox" data-launch-check="khaata" /> Apply and approve one khaata request</label>
+              <label><input type="checkbox" data-launch-check="upi" /> Place one UPI order and confirm payment</label>
+              <label><input type="checkbox" data-launch-check="catalog" /> Add/update one product from admin</label>
+              <label><input type="checkbox" data-launch-check="mobile" /> Check homepage, Dukaan, cart and account on phone</label>
+              <label><input type="checkbox" data-launch-check="images" /> Replace key remote images with final/local images later</label>
+              <label><input type="checkbox" data-launch-check="contact" /> Confirm phone, address, hours and map</label>
+            </div>
           </div>
           <div class="admin-list catalog-admin-list">
             <div class="admin-list-head">
@@ -408,6 +432,10 @@
                     <input id="addProductStock" name="stock" type="number" min="0" step="0.01" value="10" required />
                   </label>
                 </div>
+                <label>
+                  <span>Low stock alert at</span>
+                  <input id="addProductLowStock" name="lowStockAt" type="number" min="0" step="0.01" value="3" />
+                </label>
                 <div class="unit-quick-row" data-unit-target="addProductUnit">
                   <button type="button" data-unit="1 kg">1 kg</button>
                   <button type="button" data-unit="500 g">500 g</button>
@@ -419,6 +447,7 @@
                   <span>Photo link (optional)</span>
                   <input id="addProductImage" name="imageUrl" type="url" placeholder="Leave empty for now" />
                 </label>
+                <div class="catalog-image-preview" id="addProductImagePreview">Image preview</div>
                 <label class="check-row">
                   <input id="addProductLoose" name="loose" type="checkbox" />
                   <span>Loose item: customer can enter 50g, 200g, 1kg etc.</span>
@@ -464,6 +493,10 @@
                     <input id="updateProductStock" name="stock" type="number" min="0" step="0.01" required />
                   </label>
                 </div>
+                <label>
+                  <span>Low stock alert at</span>
+                  <input id="updateProductLowStock" name="lowStockAt" type="number" min="0" step="0.01" />
+                </label>
                 <div class="unit-quick-row" data-unit-target="updateProductUnit">
                   <button type="button" data-unit="1 kg">1 kg</button>
                   <button type="button" data-unit="500 g">500 g</button>
@@ -475,6 +508,7 @@
                   <span>Photo link (optional)</span>
                   <input id="updateProductImage" name="imageUrl" type="url" placeholder="Leave empty for now" />
                 </label>
+                <div class="catalog-image-preview" id="updateProductImagePreview">Image preview</div>
                 <label class="check-row">
                   <input id="updateProductLoose" name="loose" type="checkbox" />
                   <span>Loose item: customer can enter 50g, 200g, 1kg etc.</span>
@@ -834,12 +868,10 @@
 
     <nav class="bottom-nav" aria-label="Mobile navigation">
       <a href="/#home">Home</a>
-      <a href="/#catalog">Samaan</a>
-      <a href="/gallery">Gallery</a>
-      <a href="/reviews">Reviews</a>
+      <a href="/#catalog">Dukaan</a>
+      <a href="#" data-open-cart-nav>Cart</a>
+      <a href="#" data-open-account-nav>Account</a>
       <a href="/contact">Contact</a>
-      <a href="/udhaar">Udhaar</a>
-      <a href="/admin">Admin</a>
     </nav>
 
     <script src="./src/app.js?v=20260714-live-backend-fix"></script>

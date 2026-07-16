@@ -107,6 +107,9 @@ let adminSession = null;
 let paymentOptions = null;
 let selectedLedgerMonth = new Date().toISOString().slice(0, 7);
 let customerStatement = null;
+let orderRefreshTimer = null;
+let adminRefreshTimer = null;
+let lastSeenAdminOrderId = localStorage.getItem("ksLastSeenAdminOrderId") || "";
 
 try {
   adminSession = JSON.parse(localStorage.getItem("ksAdmin") || "null");
@@ -395,6 +398,8 @@ const translations = {
     receiptNote: "Digital receipt is generated on-site after order placement and can be printed, downloaded later, or shared on WhatsApp.",
     activeOrderTitle: "Order placed",
     activeOrderHelp: "Your tokri is reserved with the store. Track it here until pickup is completed.",
+    activeOrderPickup: "Pickup in 10-15 min",
+    viewInAccount: "View in Account",
     activeOrderButton: "Order already placed",
     activeOrderWhatsapp: "Order is already with store",
     activeOrderCleared: "This order is completed. Your tokri is clear now.",
@@ -691,6 +696,8 @@ const translations = {
     receiptNote: "डिजिटल रसीद ऑर्डर के बाद वेबसाइट पर बनेगी; प्रिंट, डाउनलोड या व्हाट्सऐप शेयर हो सकेगी.",
     activeOrderTitle: "Order place हो गया",
     activeOrderHelp: "आपकी टोकरी store के पास reserve है. Pickup complete होने तक status यहां देखें.",
+    activeOrderPickup: "Pickup 10-15 min में",
+    viewInAccount: "Account में देखें",
     activeOrderButton: "Order already placed",
     activeOrderWhatsapp: "Order store के पास है",
     activeOrderCleared: "यह order complete हो गया. आपकी टोकरी अब clear है.",
@@ -1540,7 +1547,7 @@ function renderCategories() {
             : state.categoryId === tile.categoryId && (!tile.filter || state.categoryFilter === tile.filter);
           return `
             <button class="category-tile ${active ? "active" : ""}" data-category-id="${category.id}" data-category="${category.name}" data-category-filter="${tile.filter || ""}">
-              <img src="${categoryTileImage(tile)}" alt="${tile.label}" loading="lazy" />
+              <img src="${categoryTileImage(tile)}" alt="${tile.label}" loading="lazy" onerror="this.onerror=null;this.src='./assets/kirana-hero.png';" />
               <span>${tile.label}</span>
             </button>
           `;
@@ -1863,6 +1870,7 @@ function setActiveCartOrder(order) {
   state.activeOrderId = order?.id || "";
   if (state.activeOrderId) localStorage.setItem("ksActiveOrderId", state.activeOrderId);
   else localStorage.removeItem("ksActiveOrderId");
+  configureLiveRefresh();
 }
 
 function activeCartOrder() {
@@ -1885,10 +1893,33 @@ function syncActiveOrderFromLoadedOrders() {
   return activeCartOrder();
 }
 
+function configureLiveRefresh() {
+  if (orderRefreshTimer) {
+    window.clearInterval(orderRefreshTimer);
+    orderRefreshTimer = null;
+  }
+  if (adminRefreshTimer) {
+    window.clearInterval(adminRefreshTimer);
+    adminRefreshTimer = null;
+  }
+  if (backendOnline && currentCustomer && state.activeOrderId) {
+    orderRefreshTimer = window.setInterval(() => {
+      if (!state.activeOrderId || !currentCustomer) return;
+      loadCustomerOrders().catch(() => {});
+    }, 15000);
+  }
+  if (backendOnline && adminSession?.token) {
+    adminRefreshTimer = window.setInterval(() => {
+      loadAdminOrders().catch(() => {});
+    }, 20000);
+  }
+}
+
 function activeOrderCard(order) {
   if (!order) return "";
   const steps = ["Placed", "Being Packed", "Ready", "Completed"];
   const activeIndex = Math.max(0, steps.indexOf(order.status));
+  const paymentInfo = paymentStatusInfo(order.paymentStatus);
   return `
     <div class="active-order-card">
       <div>
@@ -1896,9 +1927,15 @@ function activeOrderCard(order) {
         <strong>${t("activeOrderTitle")} · ${escapeHtml(order.id)}</strong>
         <small>${t("activeOrderHelp")}</small>
       </div>
+      <div class="active-order-meta">
+        <span>${t("activeOrderPickup")}</span>
+        <span>${t("toPay")}: ${rupee.format(order.payable || order.total || 0)}</span>
+        <span>${t("paymentStatus")}: ${paymentInfo.label}</span>
+      </div>
       <div class="tracking-mini" aria-label="Order tracking">
         ${steps.map((_, index) => `<span class="${index <= activeIndex ? "done" : ""}"></span>`).join("")}
       </div>
+      <button class="mini-btn" type="button" data-open-account-nav>${t("viewInAccount")}</button>
     </div>
   `;
 }
@@ -1983,13 +2020,14 @@ function renderOrders() {
     const contact = order.phone ? ` · ${order.phone}` : "";
     const paymentStatus = order.paymentStatus || "due_on_pickup";
     const paymentInfo = paymentStatusInfo(paymentStatus);
+    const isOpenOrder = ["Placed", "Being Packed"].includes(order.status);
     const timeline = (order.timeline || [])
       .slice(-3)
       .map((item) => `<span>${item.status} · ${new Date(item.at || order.createdAt || Date.now()).toLocaleString("en-IN", { dateStyle: "short", timeStyle: "short" })}</span>`)
       .join("");
     const paid = paymentStatus === "paid";
     return `
-    <div class="order-row">
+    <div class="order-row ${isOpenOrder ? "new-order-row" : ""}">
       <div>
         <strong>${order.id} · ${order.name || "Customer"}${contact}</strong>
         <small>${rupee.format(order.total || order.subtotal || 0)} ${t("pickupOrder")}</small>
@@ -2506,6 +2544,16 @@ function renderAdminSummary(summary) {
     cards[2].querySelector("strong").textContent = summary.bestSeller.name;
     cards[2].querySelector("small").textContent = `${summary.bestSeller.quantity} ${t("orderedSeed")}`;
   }
+  const waitingOrders = orders.filter((order) => ["Placed", "Being Packed"].includes(order.status));
+  const newOrderCard = $("#newOrderCard");
+  if (newOrderCard) {
+    const hasWaiting = waitingOrders.length > 0;
+    newOrderCard.classList.toggle("attention", hasWaiting);
+    $("#newOrderCount").textContent = hasWaiting ? `${waitingOrders.length} waiting` : "0 waiting";
+    newOrderCard.querySelector("small").textContent = hasWaiting
+      ? "Open orders need packing/status update"
+      : "No pending website orders right now";
+  }
 }
 
 function categoryOptions(selectedId = "") {
@@ -2540,8 +2588,10 @@ function fillUpdateProductForm(product = selectedAdminProduct()) {
   $("#updateProductMrp").value = product.mrp === undefined || product.mrp === null ? "" : Number(product.mrp || 0);
   $("#updateProductUnit").value = product.unit || "";
   $("#updateProductStock").value = Number(product.stock || 0);
+  $("#updateProductLowStock").value = Number(product.lowStockAt || 3);
   $("#updateProductImage").value = product.imageUrl || "";
   $("#updateProductLoose").checked = Boolean(product.loose);
+  updateCatalogImagePreview("update", product.imageUrl);
 }
 
 function renderAdminCatalogManager(selectedId = $("#updateProductSelect")?.value || "") {
@@ -2564,6 +2614,7 @@ function renderAdminCatalogManager(selectedId = $("#updateProductSelect")?.value
 function productFormPayload(prefix) {
   const price = Number($(`#${prefix}ProductPrice`).value || 0);
   const mrpValue = $(`#${prefix}ProductMrp`).value;
+  const lowStockInput = $(`#${prefix}ProductLowStock`);
   return {
     name: $(`#${prefix}ProductName`).value.trim(),
     categoryId: $(`#${prefix}ProductCategory`).value,
@@ -2573,9 +2624,33 @@ function productFormPayload(prefix) {
     stock: Number($(`#${prefix}ProductStock`).value || 0),
     imageUrl: $(`#${prefix}ProductImage`).value.trim(),
     loose: $(`#${prefix}ProductLoose`).checked,
-    lowStockAt: 3,
+    lowStockAt: Number(lowStockInput?.value || 3),
     sourceNote: "Admin catalog entry."
   };
+}
+
+function updateCatalogImagePreview(prefix, url = $(`#${prefix}ProductImage`)?.value || "") {
+  const preview = $(`#${prefix}ProductImagePreview`);
+  if (!preview) return;
+  const cleanUrl = String(url || "").trim();
+  preview.innerHTML = cleanUrl
+    ? `<img src="${escapeHtml(cleanUrl)}" alt="Product image preview" loading="lazy" /><span>Image preview</span>`
+    : "Image preview";
+}
+
+function renderLaunchChecklist() {
+  const saved = JSON.parse(localStorage.getItem("ksLaunchChecklist") || "{}");
+  document.querySelectorAll("[data-launch-check]").forEach((input) => {
+    input.checked = Boolean(saved[input.dataset.launchCheck]);
+  });
+}
+
+function saveLaunchChecklist(event) {
+  const input = event.target.closest("[data-launch-check]");
+  if (!input) return;
+  const saved = JSON.parse(localStorage.getItem("ksLaunchChecklist") || "{}");
+  saved[input.dataset.launchCheck] = input.checked;
+  localStorage.setItem("ksLaunchChecklist", JSON.stringify(saved));
 }
 
 async function refreshCatalogAdmin() {
@@ -2615,6 +2690,9 @@ async function addAdminProduct(event) {
     resetForm(event.currentTarget);
     const stockInput = $("#addProductStock");
     if (stockInput) stockInput.value = 10;
+    const lowStockInput = $("#addProductLowStock");
+    if (lowStockInput) lowStockInput.value = 3;
+    updateCatalogImagePreview("add", "");
     renderCategories();
     renderProducts();
     renderAdminCatalogManager(product.id);
@@ -2687,7 +2765,16 @@ async function loadAdminOrders() {
   }
   try {
     const payload = await api("/admin/orders", {}, { admin: true });
-    orders = payload.orders || orders;
+    const incomingOrders = payload.orders || [];
+    if (lastSeenAdminOrderId && incomingOrders[0]?.id && incomingOrders[0].id !== lastSeenAdminOrderId) {
+      document.body.classList.add("admin-has-new-order");
+      window.setTimeout(() => document.body.classList.remove("admin-has-new-order"), 2500);
+    }
+    if (incomingOrders[0]?.id) {
+      lastSeenAdminOrderId = incomingOrders[0].id;
+      localStorage.setItem("ksLastSeenAdminOrderId", lastSeenAdminOrderId);
+    }
+    orders = incomingOrders.length ? incomingOrders : orders;
     renderOrders();
     renderAdminSummary(payload.summary);
   } catch (error) {
@@ -2709,6 +2796,7 @@ async function loginAdmin(event) {
     saveAdminSession(payload);
     await loadAdminOrders();
     renderAdminCatalogManager();
+    configureLiveRefresh();
   } catch (error) {
     alert(error.message);
   }
@@ -2718,6 +2806,7 @@ function logoutAdmin() {
   saveAdminSession(null);
   adminRewardApplications = [];
   adminUdhaarRequests = [];
+  configureLiveRefresh();
   renderOrders();
   renderAdminRewardApplications();
   renderAdminUdhaarRequests();
@@ -2912,7 +3001,7 @@ function applyLanguage() {
   setText(".fulfillment-note", t("fulfillmentNote"));
   setText("#websiteOrder", t("placeOrder"));
   setText("#whatsappOrder", t("sendWhatsapp"));
-  setTexts(".bottom-nav a", [t("home"), t("navCatalog"), t("navGallery"), t("navReviews"), t("navContact"), t("navUdhaar"), t("navAdmin")]);
+  setTexts(".bottom-nav a", [t("home"), t("navCatalog"), t("cart"), t("account"), t("navContact")]);
   renderCart();
   renderAccount();
   renderReviews();
@@ -3125,6 +3214,7 @@ async function loginCustomer(event) {
     saveCustomer(payload.customer);
     customerOrders = payload.orders || [];
     syncActiveOrderFromLoadedOrders();
+    configureLiveRefresh();
     await loadRewardApplications();
     await loadUdhaarRequest();
     renderAccount();
@@ -3148,6 +3238,7 @@ async function signupCustomer() {
     saveCustomer(payload.customer);
     customerOrders = payload.orders || [];
     syncActiveOrderFromLoadedOrders();
+    configureLiveRefresh();
     await loadRewardApplications();
     await loadUdhaarRequest();
     renderAccount();
@@ -3164,6 +3255,7 @@ function logoutCustomer() {
   udhaarRequest = null;
   setActiveCartOrder(null);
   state.cart.clear();
+  configureLiveRefresh();
   renderAccount();
   renderRewardCards();
   renderCart();
@@ -3360,7 +3452,24 @@ document.addEventListener("click", (event) => {
   const rewardButton = event.target.closest("[data-apply-reward]");
   const udhaarReviewButton = event.target.closest("[data-udhaar-request-id]");
   const navigateButton = event.target.closest("[data-navigate-to]");
+  const openCartNav = event.target.closest("[data-open-cart-nav]");
+  const openAccountNav = event.target.closest("[data-open-account-nav]");
   const unitButton = event.target.closest("[data-unit]");
+
+  if (openCartNav) {
+    event.preventDefault();
+    $("#cartDrawer").classList.add("open");
+    renderCart();
+    return;
+  }
+
+  if (openAccountNav) {
+    event.preventDefault();
+    $("#accountDrawer").classList.add("open");
+    renderAccount();
+    loadCustomerOrders().catch(() => {});
+    return;
+  }
 
   if (unitButton) {
     const row = unitButton.closest("[data-unit-target]");
@@ -3475,6 +3584,7 @@ document.addEventListener("error", (event) => {
 }, true);
 
 document.addEventListener("change", (event) => {
+  saveLaunchChecklist(event);
   const variantSelect = event.target.closest("[data-variant-select]");
   if (variantSelect) updateVariantCard(variantSelect);
   const looseQuick = event.target.closest("[data-loose-quick]");
@@ -3486,6 +3596,9 @@ document.addEventListener("change", (event) => {
     if (unitSelect) unitSelect.value = "kg";
   }
 });
+
+$("#addProductImage")?.addEventListener("input", () => updateCatalogImagePreview("add"));
+$("#updateProductImage")?.addEventListener("input", () => updateCatalogImagePreview("update"));
 
 $("#searchInput").addEventListener("input", (event) => {
   state.search = event.target.value;
@@ -3601,6 +3714,7 @@ $("#languageToggle").addEventListener("click", () => {
   renderAdminSummary(latestSummary);
   renderReviews();
   renderAdminCatalogManager();
+  renderLaunchChecklist();
 });
 
 async function boot() {
@@ -3622,10 +3736,12 @@ async function boot() {
   renderCategories();
   renderProducts();
   renderAdminCatalogManager();
+  renderLaunchChecklist();
   renderCart();
   renderOrders();
   renderLedger();
   renderReviews();
+  configureLiveRefresh();
   if (state.route === "store" && !window.location.hash) {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }
