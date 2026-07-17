@@ -167,8 +167,7 @@ const state = {
   hindi: false,
   paymentMode: "pay_at_store",
   route: routeFromPath(),
-  wishlist: new Set(readJsonStorage("ksWishlist", [])),
-  recentlyViewed: readJsonStorage("ksRecentlyViewed", [])
+  wishlist: new Set(readJsonStorage("ksWishlist", []))
 };
 
 const rupee = new Intl.NumberFormat("en-IN", {
@@ -424,7 +423,6 @@ const translations = {
     savedForLater: "Saved",
     removeSaved: "Remove saved item",
     wishlistEmpty: "No saved items yet.",
-    recentlyEmpty: "Viewed items will appear here.",
     searchSuggestions: "Suggestions",
     noSuggestions: "No matching items.",
     viewDetails: "View details",
@@ -432,14 +430,10 @@ const translations = {
     popularPicks: "Popular picks",
     quickCategoryLinks: "Quick category links",
     currentOffers: "Aaj ki bachat",
-    customerWords: "Customer words",
     homeOfferTitle: "Pickup orders, local prices, regular dukaan service.",
     homeOfferCopy: "Reserve samaan online, pay by UPI or at pickup, and collect from Kushwaha Store when it is ready.",
     homeQuickCopy: "Jump straight to common shelves.",
     popularPicksCopy: "Fast-moving items from the current catalog.",
-    recentlyViewedTitle: "Recently viewed",
-    recentlyViewedCopy: "Items you checked recently on this device.",
-    customerWordsCopy: "Recent public reviews.",
     apiErrorGeneric: "Something went wrong. Please refresh and try again.",
     backendPageMissing: "Backend route is missing. Please redeploy the latest version.",
     home: "Home",
@@ -745,7 +739,6 @@ const translations = {
     savedForLater: "Saved",
     removeSaved: "Saved item हटाएं",
     wishlistEmpty: "अभी कोई saved item नहीं है.",
-    recentlyEmpty: "आप जो items देखेंगे वे यहां आएंगे.",
     searchSuggestions: "Suggestions",
     noSuggestions: "Matching item नहीं मिला.",
     viewDetails: "Details देखें",
@@ -753,14 +746,10 @@ const translations = {
     popularPicks: "Popular picks",
     quickCategoryLinks: "Quick category links",
     currentOffers: "आज की बचत",
-    customerWords: "Customer words",
     homeOfferTitle: "Pickup order, local price, aur regular dukaan service.",
     homeOfferCopy: "Samaan online reserve करें, UPI या pickup पर pay करें, और ready होने पर Kushwaha Store से collect करें.",
     homeQuickCopy: "Common shelves पर सीधे जाएं.",
     popularPicksCopy: "Current catalog के fast-moving items.",
-    recentlyViewedTitle: "Recently viewed",
-    recentlyViewedCopy: "इस device पर देखे गए items यहां दिखेंगे.",
-    customerWordsCopy: "Recent public reviews.",
     apiErrorGeneric: "कुछ गलत हुआ. Refresh करके दोबारा try करें.",
     backendPageMissing: "Backend route missing है. Latest version redeploy करें.",
     home: "होम",
@@ -1925,12 +1914,6 @@ function toggleWishlist(productId) {
   renderWishlist();
 }
 
-function recordRecentlyViewed(productId) {
-  state.recentlyViewed = [productId, ...state.recentlyViewed.filter((id) => id !== productId)].slice(0, 8);
-  localStorage.setItem("ksRecentlyViewed", JSON.stringify(state.recentlyViewed));
-  renderHomeSections();
-}
-
 function miniProductCard(product) {
   if (!product) return "";
   const badge = stockText(product);
@@ -1966,9 +1949,7 @@ function discountedProducts(limit = 4) {
 function renderHomeSections() {
   const quickTarget = $("#homeCategoryLinks");
   const featuredTarget = $("#featuredProducts");
-  const recentTarget = $("#recentlyViewedProducts");
-  const testimonialTarget = $("#homeTestimonials");
-  if (!quickTarget || !featuredTarget || !recentTarget || !testimonialTarget) return;
+  if (!quickTarget || !featuredTarget) return;
 
   const quickTiles = categorySections().flatMap((section) => section.tiles).slice(1, 9);
   quickTarget.innerHTML = quickTiles.map((tile) => {
@@ -1983,21 +1964,6 @@ function renderHomeSections() {
   }).join("");
 
   featuredTarget.innerHTML = discountedProducts(4).map(miniProductCard).join("") || `<p class="category-empty">${t("noItems")}</p>`;
-  const recentProducts = state.recentlyViewed.map((id) => products.find((product) => product.id === id)).filter(Boolean).slice(0, 4);
-  recentTarget.innerHTML = recentProducts.map(miniProductCard).join("") || `<p class="category-empty">${t("recentlyEmpty")}</p>`;
-  testimonialTarget.innerHTML = reviews.slice(0, 3).map((review) => `
-    <article class="testimonial-card">
-      <strong>${escapeHtml(review.name || "Customer")}</strong>
-      <span>${stars(review.rating || 5)}</span>
-      <p>${escapeHtml(review.text || "")}</p>
-    </article>
-  `).join("") || `
-    <article class="testimonial-card">
-      <strong>Kushwaha Store regular</strong>
-      <span>★★★★★</span>
-      <p>Quick pickup, familiar dukaan service, and clear online ordering.</p>
-    </article>
-  `;
 }
 
 function renderWishlist() {
@@ -2039,7 +2005,6 @@ function renderSearchSuggestions() {
 function openQuickView(productId) {
   const product = products.find((item) => item.id === productId);
   if (!product) return;
-  recordRecentlyViewed(product.id);
   const badge = stockText(product);
   const saved = state.wishlist.has(product.id);
   $("#quickViewContent").innerHTML = `
@@ -3205,8 +3170,8 @@ function applyLanguage() {
   setText(".offer-banner h2", t("homeOfferTitle"));
   setText(".offer-banner p:not(.eyebrow)", t("homeOfferCopy"));
   setText(".offer-banner .primary-btn", t("startShopping"));
-  setTexts(".home-panel .panel-head h3", [t("quickCategoryLinks"), t("popularPicks"), t("recentlyViewedTitle"), t("customerWords")]);
-  setTexts(".home-panel .panel-head small", [t("homeQuickCopy"), t("popularPicksCopy"), t("recentlyViewedCopy"), t("customerWordsCopy")]);
+  setTexts(".home-panel .panel-head h3", [t("quickCategoryLinks"), t("popularPicks")]);
+  setTexts(".home-panel .panel-head small", [t("homeQuickCopy"), t("popularPicksCopy")]);
 
   setText(".store-story .eyebrow", t("galleryEyebrow"));
   setText(".store-story .section-heading h2", t("galleryTitle"));
@@ -3332,7 +3297,6 @@ function addToCart(id) {
   const current = state.cart.get(id) || 0;
   if (!product || current >= product.stock) return;
   state.cart.set(id, current + 1);
-  recordRecentlyViewed(id);
   renderCart();
 }
 
@@ -3373,7 +3337,6 @@ function addLooseToCart(id) {
     return;
   }
   state.cart.set(id, Number((current + qty).toFixed(4)));
-  recordRecentlyViewed(id);
   renderCart();
 }
 
@@ -3976,26 +3939,6 @@ document.addEventListener("click", (event) => {
     if (suggestions) suggestions.hidden = true;
   }
 });
-
-let swipeTarget = null;
-let swipeStartX = 0;
-document.addEventListener("touchstart", (event) => {
-  const target = event.target.closest(".category-shelf, .shop-photo-grid, .featured-products");
-  if (!target) return;
-  swipeTarget = target;
-  swipeStartX = event.touches[0]?.clientX || 0;
-}, { passive: true });
-
-document.addEventListener("touchend", (event) => {
-  if (!swipeTarget) return;
-  const endX = event.changedTouches[0]?.clientX || 0;
-  const delta = swipeStartX - endX;
-  if (Math.abs(delta) > 48) {
-    swipeTarget.scrollBy({ left: delta, behavior: "smooth" });
-  }
-  swipeTarget = null;
-  swipeStartX = 0;
-}, { passive: true });
 
 $("#stockFilter").addEventListener("change", (event) => {
   state.stock = event.target.value;
