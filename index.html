@@ -32,7 +32,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./src/styles.css?v=20260714-live-backend-fix" />
+    <link rel="stylesheet" href="./src/styles.css?v=20260717-launch-polish" />
   </head>
   <body>
     <div class="app-shell">
@@ -273,6 +273,49 @@
           </div>
         </section>
 
+        <section class="section home-shop-highlights" id="homeHighlights">
+          <div class="offer-banner">
+            <div>
+              <p class="eyebrow">Aaj ki bachat</p>
+              <h2>Pickup orders, local prices, regular dukaan service.</h2>
+              <p>Reserve samaan online, pay by UPI or at pickup, and collect from Kushwaha Store when it is ready.</p>
+            </div>
+            <a class="primary-btn" href="/#catalog">Start shopping</a>
+          </div>
+          <div class="home-grid">
+            <article class="home-panel">
+              <div class="panel-head">
+                <h3>Quick category links</h3>
+                <small>Jump straight to common shelves.</small>
+              </div>
+              <div class="home-category-links" id="homeCategoryLinks"></div>
+            </article>
+            <article class="home-panel">
+              <div class="panel-head">
+                <h3>Popular picks</h3>
+                <small>Fast-moving items from the current catalog.</small>
+              </div>
+              <div class="featured-products" id="featuredProducts"></div>
+            </article>
+          </div>
+          <div class="home-grid secondary">
+            <article class="home-panel">
+              <div class="panel-head">
+                <h3>Recently viewed</h3>
+                <small>Items you checked recently on this device.</small>
+              </div>
+              <div class="featured-products" id="recentlyViewedProducts"></div>
+            </article>
+            <article class="home-panel">
+              <div class="panel-head">
+                <h3>Customer words</h3>
+                <small>Recent public reviews.</small>
+              </div>
+              <div class="home-testimonials" id="homeTestimonials"></div>
+            </article>
+          </div>
+        </section>
+
         <section class="section shelf-section" id="catalog">
           <div class="section-heading">
             <p class="eyebrow">Mohalle wali shelf</p>
@@ -281,10 +324,13 @@
           </div>
           <div class="category-shelf" id="categoryShelf"></div>
           <div class="catalog-tools">
-            <label class="search-box">
-              <span>Search</span>
-              <input id="searchInput" type="search" placeholder="Search atta, chai, namak..." />
-            </label>
+            <div class="search-wrap">
+              <label class="search-box">
+                <span>Search</span>
+                <input id="searchInput" type="search" placeholder="Search atta, chai, namak..." autocomplete="off" aria-controls="searchSuggestions" />
+              </label>
+              <div class="search-suggestions" id="searchSuggestions" hidden></div>
+            </div>
             <label class="filter-box">
               <span>Stock</span>
               <select id="stockFilter">
@@ -418,6 +464,10 @@
               <span>2. Pick category</span>
               <span>3. Add size/price/stock</span>
               <span>4. Save</span>
+            </div>
+            <div class="catalog-warning-strip">
+              <strong>Before saving:</strong>
+              <span>Check printed MRP, selling price, stock count and category. Customers will see saved catalog changes immediately.</span>
             </div>
             <form class="quick-category-form" id="quickCategoryForm">
               <label>
@@ -888,6 +938,17 @@
           <h3>Past Orders</h3>
           <div id="customerOrders"></div>
         </div>
+        <div class="account-orders">
+          <h3>Saved for later</h3>
+          <div id="wishlistList"></div>
+        </div>
+      </div>
+    </aside>
+
+    <aside class="quick-view-modal" id="quickViewModal" aria-hidden="true">
+      <div class="quick-view-panel">
+        <button class="icon-btn" id="closeQuickView" aria-label="Close product details">×</button>
+        <div id="quickViewContent"></div>
       </div>
     </aside>
 
@@ -899,6 +960,6 @@
       <a href="/contact">Contact</a>
     </nav>
 
-    <script src="./src/app.js?v=20260714-live-backend-fix"></script>
+    <script src="./src/app.js?v=20260717-launch-polish"></script>
   </body>
 </html>

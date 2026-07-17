@@ -146,6 +146,15 @@ function routeFromPath() {
   return "store";
 }
 
+function readJsonStorage(key, fallback) {
+  try {
+    const value = JSON.parse(localStorage.getItem(key) || "null");
+    return value ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 const state = {
   category: "All",
   categoryId: "all",
@@ -157,7 +166,9 @@ const state = {
   activeOrderId: localStorage.getItem("ksActiveOrderId") || "",
   hindi: false,
   paymentMode: "pay_at_store",
-  route: routeFromPath()
+  route: routeFromPath(),
+  wishlist: new Set(readJsonStorage("ksWishlist", [])),
+  recentlyViewed: readJsonStorage("ksRecentlyViewed", [])
 };
 
 const rupee = new Intl.NumberFormat("en-IN", {
@@ -405,9 +416,32 @@ const translations = {
     activeOrderCleared: "This order is completed. Your tokri is clear now.",
     activeOrderAddBlocked: "One order is already active. Please wait for pickup completion before changing the tokri.",
     reservedInOrder: "Reserved",
-    fulfillmentNote: "Pickup ready in 10-15 min · Delivery within 2km coming soon",
+    fulfillmentNote: "Pickup only: ready in 10-15 min. Delivery is not available yet.",
     placeOrder: "Place website order",
     sendWhatsapp: "Send to Kushwaha Store WhatsApp",
+    quickView: "Quick view",
+    saveForLater: "Save",
+    savedForLater: "Saved",
+    removeSaved: "Remove saved item",
+    wishlistEmpty: "No saved items yet.",
+    recentlyEmpty: "Viewed items will appear here.",
+    searchSuggestions: "Suggestions",
+    noSuggestions: "No matching items.",
+    viewDetails: "View details",
+    startShopping: "Start shopping",
+    popularPicks: "Popular picks",
+    quickCategoryLinks: "Quick category links",
+    currentOffers: "Aaj ki bachat",
+    customerWords: "Customer words",
+    homeOfferTitle: "Pickup orders, local prices, regular dukaan service.",
+    homeOfferCopy: "Reserve samaan online, pay by UPI or at pickup, and collect from Kushwaha Store when it is ready.",
+    homeQuickCopy: "Jump straight to common shelves.",
+    popularPicksCopy: "Fast-moving items from the current catalog.",
+    recentlyViewedTitle: "Recently viewed",
+    recentlyViewedCopy: "Items you checked recently on this device.",
+    customerWordsCopy: "Recent public reviews.",
+    apiErrorGeneric: "Something went wrong. Please refresh and try again.",
+    backendPageMissing: "Backend route is missing. Please redeploy the latest version.",
     home: "Home",
     addToTokri: "Add to tokri",
     itemWord: "item",
@@ -703,9 +737,32 @@ const translations = {
     activeOrderCleared: "यह order complete हो गया. आपकी टोकरी अब clear है.",
     activeOrderAddBlocked: "एक order already active है. टोकरी बदलने से पहले pickup complete होने दें.",
     reservedInOrder: "Reserved",
-    fulfillmentNote: "पिकअप 10-15 मिनट में तैयार · 2km डिलीवरी जल्द आएगी",
+    fulfillmentNote: "सिर्फ pickup: order 10-15 मिनट में ready. Delivery अभी available नहीं है.",
     placeOrder: "वेबसाइट ऑर्डर करें",
     sendWhatsapp: "कुशवाहा स्टोर व्हाट्सऐप पर भेजें",
+    quickView: "Details देखें",
+    saveForLater: "Save करें",
+    savedForLater: "Saved",
+    removeSaved: "Saved item हटाएं",
+    wishlistEmpty: "अभी कोई saved item नहीं है.",
+    recentlyEmpty: "आप जो items देखेंगे वे यहां आएंगे.",
+    searchSuggestions: "Suggestions",
+    noSuggestions: "Matching item नहीं मिला.",
+    viewDetails: "Details देखें",
+    startShopping: "Shopping शुरू करें",
+    popularPicks: "Popular picks",
+    quickCategoryLinks: "Quick category links",
+    currentOffers: "आज की बचत",
+    customerWords: "Customer words",
+    homeOfferTitle: "Pickup order, local price, aur regular dukaan service.",
+    homeOfferCopy: "Samaan online reserve करें, UPI या pickup पर pay करें, और ready होने पर Kushwaha Store से collect करें.",
+    homeQuickCopy: "Common shelves पर सीधे जाएं.",
+    popularPicksCopy: "Current catalog के fast-moving items.",
+    recentlyViewedTitle: "Recently viewed",
+    recentlyViewedCopy: "इस device पर देखे गए items यहां दिखेंगे.",
+    customerWordsCopy: "Recent public reviews.",
+    apiErrorGeneric: "कुछ गलत हुआ. Refresh करके दोबारा try करें.",
+    backendPageMissing: "Backend route missing है. Latest version redeploy करें.",
     home: "होम",
     addToTokri: "टोकरी में जोड़ें",
     itemWord: "सामान",
@@ -1233,12 +1290,32 @@ async function api(path, options = {}, meta = {}) {
     payload = { error: raw || `Unexpected non-JSON response from ${path}` };
   }
   if (!response.ok) {
-    throw new Error(payload.error || "Backend request failed");
+    throw new Error(friendlyApiError(response.status, payload.error || raw, path));
   }
   if (payload?.error && !raw.trim().startsWith("{") && !raw.trim().startsWith("[")) {
     throw new Error(payload.error);
   }
   return payload;
+}
+
+function friendlyApiError(status, error, path) {
+  const message = String(error || "");
+  if (status === 404 || /page could not be found|NOT_FOUND/i.test(message)) {
+    return `${t("backendPageMissing")} (${path})`;
+  }
+  if (/JWT issued at future/i.test(message)) {
+    return "Supabase clock/token issue. Wait 1 minute, refresh, and try again.";
+  }
+  if (/ENOENT|seed\.json/i.test(message)) {
+    return "Backend seed file is missing in deployment. Redeploy the latest committed project.";
+  }
+  if (/Phone logins are disabled/i.test(message)) {
+    return "Use the website account form, not Supabase phone OTP login.";
+  }
+  if (/Invalid admin credentials/i.test(message)) {
+    return "Invalid admin credentials. Use phone 9136278478 and password 1234.";
+  }
+  return message || t("apiErrorGeneric");
 }
 
 function friendlyOrderError(error) {
@@ -1386,6 +1463,7 @@ function normalizeBootstrap(payload) {
   renderAdminSummary(payload.summary);
   renderLedger();
   renderReviews();
+  renderHomeSections();
 }
 
 function saveCustomer(customer) {
@@ -1834,6 +1912,175 @@ function productSubgroup(product) {
   return "";
 }
 
+function persistWishlist() {
+  localStorage.setItem("ksWishlist", JSON.stringify([...state.wishlist]));
+}
+
+function toggleWishlist(productId) {
+  if (state.wishlist.has(productId)) state.wishlist.delete(productId);
+  else state.wishlist.add(productId);
+  persistWishlist();
+  renderProducts();
+  renderHomeSections();
+  renderWishlist();
+}
+
+function recordRecentlyViewed(productId) {
+  state.recentlyViewed = [productId, ...state.recentlyViewed.filter((id) => id !== productId)].slice(0, 8);
+  localStorage.setItem("ksRecentlyViewed", JSON.stringify(state.recentlyViewed));
+  renderHomeSections();
+}
+
+function miniProductCard(product) {
+  if (!product) return "";
+  const badge = stockText(product);
+  const saved = state.wishlist.has(product.id);
+  return `
+    <article class="mini-product-card">
+      <img src="${catalogImageUrl(product)}" alt="${escapeHtml(product.name)}" loading="lazy" data-product-img="${product.id}" data-fallback-src="${productFallbackImage(product)}" />
+      <div>
+        <strong>${escapeHtml(product.name)}</strong>
+        <small>${escapeHtml(product.category || "")} · ${escapeHtml(product.unit || "")}</small>
+        <span>${priceDisplay(product)}</span>
+      </div>
+      <button class="mini-btn" type="button" data-quick-view="${product.id}">${t("viewDetails")}</button>
+      <button class="wishlist-action ${saved ? "saved" : ""}" type="button" data-wishlist="${product.id}" aria-pressed="${saved}">
+        ${saved ? "★" : "☆"}
+      </button>
+      <small class="stock-badge ${badge.cls}">${badge.label}</small>
+    </article>
+  `;
+}
+
+function discountedProducts(limit = 4) {
+  return products
+    .filter((product) => Number(product.price || 0) > 0 && Number(product.stock || 0) > 0)
+    .sort((a, b) => {
+      const aSave = Number(a.mrp || 0) - Number(a.price || 0);
+      const bSave = Number(b.mrp || 0) - Number(b.price || 0);
+      return bSave - aSave;
+    })
+    .slice(0, limit);
+}
+
+function renderHomeSections() {
+  const quickTarget = $("#homeCategoryLinks");
+  const featuredTarget = $("#featuredProducts");
+  const recentTarget = $("#recentlyViewedProducts");
+  const testimonialTarget = $("#homeTestimonials");
+  if (!quickTarget || !featuredTarget || !recentTarget || !testimonialTarget) return;
+
+  const quickTiles = categorySections().flatMap((section) => section.tiles).slice(1, 9);
+  quickTarget.innerHTML = quickTiles.map((tile) => {
+    const category = categoryById(tile.categoryId);
+    if (!category) return "";
+    return `
+      <button class="home-category-link" type="button" data-category-id="${category.id}" data-category="${category.name}" data-category-filter="${tile.filter || ""}">
+        <img src="${categoryTileImage(tile)}" alt="${escapeHtml(tile.label)}" loading="lazy" />
+        <span>${escapeHtml(tile.label)}</span>
+      </button>
+    `;
+  }).join("");
+
+  featuredTarget.innerHTML = discountedProducts(4).map(miniProductCard).join("") || `<p class="category-empty">${t("noItems")}</p>`;
+  const recentProducts = state.recentlyViewed.map((id) => products.find((product) => product.id === id)).filter(Boolean).slice(0, 4);
+  recentTarget.innerHTML = recentProducts.map(miniProductCard).join("") || `<p class="category-empty">${t("recentlyEmpty")}</p>`;
+  testimonialTarget.innerHTML = reviews.slice(0, 3).map((review) => `
+    <article class="testimonial-card">
+      <strong>${escapeHtml(review.name || "Customer")}</strong>
+      <span>${stars(review.rating || 5)}</span>
+      <p>${escapeHtml(review.text || "")}</p>
+    </article>
+  `).join("") || `
+    <article class="testimonial-card">
+      <strong>Kushwaha Store regular</strong>
+      <span>★★★★★</span>
+      <p>Quick pickup, familiar dukaan service, and clear online ordering.</p>
+    </article>
+  `;
+}
+
+function renderWishlist() {
+  const target = $("#wishlistList");
+  if (!target) return;
+  const savedProducts = [...state.wishlist].map((id) => products.find((product) => product.id === id)).filter(Boolean);
+  target.innerHTML = savedProducts.map((product) => `
+    <div class="wishlist-row">
+      <button type="button" data-quick-view="${product.id}">
+        <strong>${escapeHtml(product.name)}</strong>
+        <small>${escapeHtml(product.unit)} · ${rupee.format(product.price || 0)}</small>
+      </button>
+      <button class="mini-btn" type="button" data-wishlist="${product.id}">${t("removeSaved")}</button>
+    </div>
+  `).join("") || `<p>${t("wishlistEmpty")}</p>`;
+}
+
+function renderSearchSuggestions() {
+  const target = $("#searchSuggestions");
+  if (!target) return;
+  const query = state.search.trim().toLowerCase();
+  if (!query) {
+    target.hidden = true;
+    target.innerHTML = "";
+    return;
+  }
+  const suggestions = products
+    .filter((product) => `${product.name} ${product.category} ${product.unit}`.toLowerCase().includes(query))
+    .slice(0, 6);
+  target.hidden = false;
+  target.innerHTML = suggestions.map((product) => `
+    <button type="button" data-search-suggestion="${product.id}">
+      <span>${escapeHtml(product.name)}</span>
+      <small>${escapeHtml(product.category)} · ${escapeHtml(product.unit)}</small>
+    </button>
+  `).join("") || `<p>${t("noSuggestions")}</p>`;
+}
+
+function openQuickView(productId) {
+  const product = products.find((item) => item.id === productId);
+  if (!product) return;
+  recordRecentlyViewed(product.id);
+  const badge = stockText(product);
+  const saved = state.wishlist.has(product.id);
+  $("#quickViewContent").innerHTML = `
+    <div class="quick-view-art">
+      <img src="${catalogImageUrl(product)}" alt="${escapeHtml(product.name)}" data-product-img="${product.id}" data-fallback-src="${productFallbackImage(product)}" />
+    </div>
+    <div class="quick-view-copy">
+      <span class="subgroup-chip">${escapeHtml(productSubgroup(product) || product.category || "Dukaan item")}</span>
+      <h2>${escapeHtml(product.name)}</h2>
+      <small>${escapeHtml(product.category)} · ${escapeHtml(product.unit)}</small>
+      <div class="price-line">
+        <span>${priceDisplay(product)}</span>
+        <span class="stock-badge ${badge.cls}">${badge.label}</span>
+      </div>
+      <p>Pickup from Kushwaha Store. Final availability is confirmed by the shop while packing.</p>
+      <div class="quick-view-actions">
+        <button class="primary-btn" type="button" data-add="${product.id}" ${product.stock <= 0 ? "disabled" : ""}>${t("addToTokri")}</button>
+        <button class="secondary-btn" type="button" data-wishlist="${product.id}">${saved ? t("savedForLater") : t("saveForLater")}</button>
+      </div>
+    </div>
+  `;
+  $("#quickViewModal").classList.add("open");
+  $("#quickViewModal").setAttribute("aria-hidden", "false");
+}
+
+function closeQuickView() {
+  $("#quickViewModal").classList.remove("open");
+  $("#quickViewModal").setAttribute("aria-hidden", "true");
+}
+
+function catalogSkeleton(count = 8) {
+  return Array.from({ length: count }, () => `
+    <article class="product-card skeleton-card" aria-hidden="true">
+      <div class="product-art"></div>
+      <span></span>
+      <span></span>
+      <span></span>
+    </article>
+  `).join("");
+}
+
 function renderProducts() {
   if ((state.categoryId === "all" || state.category === "All") && !state.search.trim() && !state.showAllProducts) {
     $("#productGrid").innerHTML = `<p class="category-empty">${t("chooseCategory")}</p>`;
@@ -1855,14 +2102,16 @@ function renderProducts() {
     const canOrder = Number(product.price || 0) > 0 && product.stock > 0;
     const subgroup = productSubgroup(product);
     const groupId = isVariant ? productKey(entry.brand) : "";
+    const saved = state.wishlist.has(product.id);
     return `
       <article class="product-card">
         <div class="product-art">
-          <img src="${imageUrl}" alt="${product.name}" loading="lazy" data-product-img="${product.id}" data-fallback-src="${productFallbackImage(product)}" />
+          <img src="${imageUrl}" alt="${escapeHtml(product.name)}" loading="lazy" data-product-img="${product.id}" data-fallback-src="${productFallbackImage(product)}" />
+          <button class="wishlist-floating ${saved ? "saved" : ""}" type="button" data-wishlist="${product.id}" aria-pressed="${saved}" aria-label="${saved ? t("savedForLater") : t("saveForLater")}">${saved ? "★" : "☆"}</button>
         </div>
-        <h3>${isVariant ? entry.brand : product.name}</h3>
+        <h3>${escapeHtml(isVariant ? entry.brand : product.name)}</h3>
         ${subgroup ? `<span class="subgroup-chip">${subgroup}</span>` : ""}
-        <small>${product.category} · ${isVariant ? "Choose size" : product.unit}</small>
+        <small>${escapeHtml(product.category)} · ${isVariant ? "Choose size" : escapeHtml(product.unit)}</small>
         ${isVariant ? `
           <label class="variant-controls">
             <span>Size</span>
@@ -1876,6 +2125,10 @@ function renderProducts() {
           <span class="stock-badge ${badge.cls}" data-variant-stock="${groupId}">${badge.label}</span>
         </div>
         ${looseControls(product)}
+        <div class="product-card-actions">
+          <button class="mini-btn" type="button" data-quick-view="${product.id}">${t("quickView")}</button>
+          <button class="mini-btn subtle" type="button" data-wishlist="${product.id}">${saved ? t("savedForLater") : t("saveForLater")}</button>
+        </div>
         <button class="add-btn" ${isVariant ? `data-add-selected="${groupId}"` : product.loose ? `data-add-loose="${product.id}"` : `data-add="${product.id}"`} ${!canOrder ? "disabled" : ""}>
           ${!canOrder ? t("unavailable") : product.loose ? t("addLoose") : t("addToTokri")}
         </button>
@@ -2222,6 +2475,7 @@ function renderAccount() {
   }
   renderPaymentModes();
   renderCustomerOrders();
+  renderWishlist();
 }
 
 function renderRewardCards() {
@@ -2887,6 +3141,24 @@ function applyRoute() {
   document.body.classList.toggle("store-page", state.route === "store");
   const storyDropdown = document.querySelector(".story-dropdown");
   if (storyDropdown) storyDropdown.open = state.route === "blog";
+  updateActiveNavigation();
+}
+
+function updateActiveNavigation() {
+  const path = currentPath();
+  const hash = window.location.hash || "";
+  document.querySelectorAll(".desktop-nav a, .bottom-nav a").forEach((link) => {
+    const href = link.getAttribute("href") || "";
+    const url = new URL(href, window.location.origin);
+    const linkPath = url.pathname.replace(/\/$/, "") || "/";
+    const linkHash = url.hash || "";
+    const active = linkPath === path && (!linkHash || linkHash === hash)
+      || state.route === "store" && path === "/" && hash && linkHash === hash
+      || state.route === "store" && path === "/" && href === "/#home" && !hash;
+    link.classList.toggle("active", active);
+    if (active) link.setAttribute("aria-current", "page");
+    else link.removeAttribute("aria-current");
+  });
 }
 
 function scrollForRoute(hash = "") {
@@ -2928,6 +3200,13 @@ function applyLanguage() {
 
   setTexts(".store-strip span", [t("address"), t("hours"), t("call"), t("pickup")]);
   setText(".store-strip article:nth-child(4) strong", t("readyShort"));
+
+  setText(".offer-banner .eyebrow", t("currentOffers"));
+  setText(".offer-banner h2", t("homeOfferTitle"));
+  setText(".offer-banner p:not(.eyebrow)", t("homeOfferCopy"));
+  setText(".offer-banner .primary-btn", t("startShopping"));
+  setTexts(".home-panel .panel-head h3", [t("quickCategoryLinks"), t("popularPicks"), t("recentlyViewedTitle"), t("customerWords")]);
+  setTexts(".home-panel .panel-head small", [t("homeQuickCopy"), t("popularPicksCopy"), t("recentlyViewedCopy"), t("customerWordsCopy")]);
 
   setText(".store-story .eyebrow", t("galleryEyebrow"));
   setText(".store-story .section-heading h2", t("galleryTitle"));
@@ -3011,6 +3290,7 @@ function applyLanguage() {
   setTexts(".module-grid p", [t("pointsCopy"), t("monthlyGiftsCopy"), t("communityRewardsCopy")]);
   document.querySelectorAll(".module-grid .switch").forEach((label) => setSwitchLabel(label, t("enabled")));
   renderRewardCards();
+  renderHomeSections();
   renderAdminRewardApplications();
   renderAdminUdhaarRequests();
 
@@ -3039,6 +3319,7 @@ function applyLanguage() {
   renderCart();
   renderAccount();
   renderReviews();
+  renderHomeSections();
   renderAdminGate();
 }
 
@@ -3051,6 +3332,7 @@ function addToCart(id) {
   const current = state.cart.get(id) || 0;
   if (!product || current >= product.stock) return;
   state.cart.set(id, current + 1);
+  recordRecentlyViewed(id);
   renderCart();
 }
 
@@ -3091,6 +3373,7 @@ function addLooseToCart(id) {
     return;
   }
   state.cart.set(id, Number((current + qty).toFixed(4)));
+  recordRecentlyViewed(id);
   renderCart();
 }
 
@@ -3489,6 +3772,38 @@ document.addEventListener("click", (event) => {
   const openCartNav = event.target.closest("[data-open-cart-nav]");
   const openAccountNav = event.target.closest("[data-open-account-nav]");
   const unitButton = event.target.closest("[data-unit]");
+  const quickViewButton = event.target.closest("[data-quick-view]");
+  const wishlistButton = event.target.closest("[data-wishlist]");
+  const searchSuggestionButton = event.target.closest("[data-search-suggestion]");
+
+  if (quickViewButton) {
+    event.preventDefault();
+    openQuickView(quickViewButton.dataset.quickView);
+    return;
+  }
+
+  if (wishlistButton) {
+    event.preventDefault();
+    toggleWishlist(wishlistButton.dataset.wishlist);
+    return;
+  }
+
+  if (searchSuggestionButton) {
+    const product = products.find((item) => item.id === searchSuggestionButton.dataset.searchSuggestion);
+    if (product) {
+      state.search = product.name;
+      state.category = "All";
+      state.categoryId = "all";
+      state.categoryFilter = "";
+      state.showAllProducts = false;
+      $("#searchInput").value = product.name;
+      renderSearchSuggestions();
+      renderCategories();
+      renderProducts();
+      openQuickView(product.id);
+    }
+    return;
+  }
 
   if (openCartNav) {
     event.preventDefault();
@@ -3530,11 +3845,13 @@ document.addEventListener("click", (event) => {
 
   if (addButton) {
     addToCart(addButton.dataset.add);
+    if (addButton.closest("#quickViewModal")) closeQuickView();
     $("#cartDrawer").classList.add("open");
   }
 
   if (addLooseButton) {
     addLooseToCart(addLooseButton.dataset.addLoose);
+    if (addLooseButton.closest("#quickViewModal")) closeQuickView();
     $("#cartDrawer").classList.add("open");
   }
 
@@ -3543,6 +3860,7 @@ document.addEventListener("click", (event) => {
     const selectedId = document.querySelector(`[data-variant-select="${groupId}"]`)?.value;
     if (selectedId) {
       addToCart(selectedId);
+      if (addSelectedButton.closest("#quickViewModal")) closeQuickView();
       $("#cartDrawer").classList.add("open");
     }
   }
@@ -3648,8 +3966,36 @@ $("#searchInput").addEventListener("input", (event) => {
     state.showAllProducts = false;
     renderCategories();
   }
+  renderSearchSuggestions();
   renderProducts();
 });
+
+document.addEventListener("click", (event) => {
+  if (!event.target.closest(".search-wrap")) {
+    const suggestions = $("#searchSuggestions");
+    if (suggestions) suggestions.hidden = true;
+  }
+});
+
+let swipeTarget = null;
+let swipeStartX = 0;
+document.addEventListener("touchstart", (event) => {
+  const target = event.target.closest(".category-shelf, .shop-photo-grid, .featured-products");
+  if (!target) return;
+  swipeTarget = target;
+  swipeStartX = event.touches[0]?.clientX || 0;
+}, { passive: true });
+
+document.addEventListener("touchend", (event) => {
+  if (!swipeTarget) return;
+  const endX = event.changedTouches[0]?.clientX || 0;
+  const delta = swipeStartX - endX;
+  if (Math.abs(delta) > 48) {
+    swipeTarget.scrollBy({ left: delta, behavior: "smooth" });
+  }
+  swipeTarget = null;
+  swipeStartX = 0;
+}, { passive: true });
 
 $("#stockFilter").addEventListener("change", (event) => {
   state.stock = event.target.value;
@@ -3660,6 +4006,10 @@ $("#openCart").addEventListener("click", () => $("#cartDrawer").classList.add("o
 $("#closeCart").addEventListener("click", () => $("#cartDrawer").classList.remove("open"));
 $("#cartDrawer").addEventListener("click", (event) => {
   if (event.target.id === "cartDrawer") $("#cartDrawer").classList.remove("open");
+});
+$("#closeQuickView").addEventListener("click", closeQuickView);
+$("#quickViewModal").addEventListener("click", (event) => {
+  if (event.target.id === "quickViewModal") closeQuickView();
 });
 
 $("#websiteOrder").addEventListener("click", placeWebsiteOrder);
@@ -3757,6 +4107,7 @@ $("#languageToggle").addEventListener("click", () => {
 });
 
 async function boot() {
+  if ($("#productGrid")) $("#productGrid").innerHTML = catalogSkeleton();
   await loadBackendData();
   if (currentCustomer) {
     await loadCustomerOrders().catch(() => {
@@ -3773,6 +4124,7 @@ async function boot() {
   applyLanguage();
   renderAdminGate();
   renderCategories();
+  renderHomeSections();
   renderProducts();
   renderAdminCatalogManager();
   renderLaunchChecklist();
