@@ -250,7 +250,7 @@ const translations = {
     beingPacked: "Being Packed",
     beingPackedCopy: "Owner checks shelf stock",
     readyPickup: "Ready for Pickup",
-    readyPickupCopy: "WhatsApp notification placeholder",
+    readyPickupCopy: "Customer gets WhatsApp/account status update",
     completed: "Completed",
     completedCopy: "Cash/UPI at store",
     bahi: "Bahi-khata digital",
@@ -326,7 +326,7 @@ const translations = {
     bestSeller: "Best Seller",
     receipts: "Receipts",
     printable: "Printable",
-    receiptsCopy: "Download/share via WhatsApp placeholder",
+    receiptsCopy: "Download, print, or share with customers",
     incomingOrders: "Incoming Orders",
     refreshOrders: "Refresh",
     adminLogin: "Admin Login",
@@ -566,7 +566,7 @@ const translations = {
     beingPacked: "पैक हो रहा है",
     beingPackedCopy: "दुकान वाला शेल्फ स्टॉक चेक करता है",
     readyPickup: "पिकअप के लिए तैयार",
-    readyPickupCopy: "व्हाट्सऐप सूचना placeholder",
+    readyPickupCopy: "ग्राहक को WhatsApp/account status update मिलेगा",
     completed: "पूरा हुआ",
     completedCopy: "दुकान पर कैश/UPI",
     bahi: "डिजिटल बही-खाता",
@@ -632,7 +632,7 @@ const translations = {
     contactPickupValue: "10-15 min में ready",
     contactPickupCopy: "Online reservation minimum value ₹29 है.",
     ownerPanel: "मालिक का मोबाइल पैनल",
-    adminTitle: "एडमिन डैशबोर्ड placeholder",
+    adminTitle: "एडमिन डैशबोर्ड",
     adminCopy: "आसान टैप के लिए बना: स्टॉक, ऑर्डर, रीस्टॉकिंग, बिल, रोज़ की बिक्री और module toggles.",
     adminExplainerTitle: "दुकान वाले orders कैसे देखेंगे",
     adminExplainerCopy: "वेबसाइट checkout orders नीचे अपने-आप दिखेंगे: ग्राहक नाम, फोन, सामान, payable amount, payment mode और status buttons. व्हाट्सऐप orders सीधे कुशवाहा स्टोर व्हाट्सऐप में खुलेंगे.",
@@ -642,7 +642,7 @@ const translations = {
     bestSeller: "सबसे ज्यादा बिका",
     receipts: "रसीदें",
     printable: "प्रिंट तैयार",
-    receiptsCopy: "व्हाट्सऐप share/download placeholder",
+    receiptsCopy: "Customer को download, print या share करें",
     incomingOrders: "नए ऑर्डर",
     refreshOrders: "Refresh",
     adminLogin: "एडमिन लॉगिन",
@@ -689,9 +689,9 @@ const translations = {
     legacy: "विरासत और इतिहास",
     legacyCopy: "कुशवाहा स्टोर की शुरुआत 1992 में हुई, जब चंद्रमा भगत जी ने steady job छोड़कर Chanakya Place में apna kuch बनाने का फैसला लिया. छोटा kirana counter धीरे-धीरे sahi cheez, sahi daam और sahi tarazu वाली भरोसेमंद मोहल्ले की दुकान बन गया. आज वही legacy pickup orders, digital udhaar, loyalty rewards और family/customer memories के साथ आगे बढ़ रही है.",
     aboutShop: "दुकान के बारे में",
-    aboutShopCopy: "परिवार की जानकारी, values, regular customer service और neighbourhood role के लिए placeholder.",
+    aboutShopCopy: "परिवार, भरोसे और मोहल्ले की सेवा से जुड़ी बातें यहां पढ़ें.",
     faqLong: "अक्सर पूछे जाने वाले सवाल",
-    faqLongCopy: "पिकअप, returns, उधार, रसीद, online orders और monthly account questions के लिए placeholder.",
+    faqLongCopy: "पिकअप, returns, उधार, रसीद, online orders और monthly account से जुड़े जवाब.",
     footer: "1992 से Chanakya Place की सेवा · Pickup-first online ordering",
     tokri: "आपकी टोकरी",
     subtotal: "कुल सामान",
@@ -3114,12 +3114,22 @@ function updateActiveNavigation() {
   const hash = window.location.hash || "";
   document.querySelectorAll(".desktop-nav a, .bottom-nav a").forEach((link) => {
     const href = link.getAttribute("href") || "";
+    if (href === "#" || link.hasAttribute("data-open-cart-nav") || link.hasAttribute("data-open-account-nav")) {
+      link.classList.remove("active");
+      link.removeAttribute("aria-current");
+      return;
+    }
     const url = new URL(href, window.location.origin);
     const linkPath = url.pathname.replace(/\/$/, "") || "/";
     const linkHash = url.hash || "";
-    const active = linkPath === path && (!linkHash || linkHash === hash)
-      || state.route === "store" && path === "/" && hash && linkHash === hash
-      || state.route === "store" && path === "/" && href === "/#home" && !hash;
+    let active = false;
+    if (path === "/" && hash) {
+      active = linkPath === "/" && linkHash === hash;
+    } else if (path === "/") {
+      active = href === "/#home" || href === "/";
+    } else {
+      active = linkPath === path && !linkHash;
+    }
     link.classList.toggle("active", active);
     if (active) link.setAttribute("aria-current", "page");
     else link.removeAttribute("aria-current");
